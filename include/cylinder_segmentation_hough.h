@@ -15,8 +15,7 @@ class GaussianMixtureModel
 
 class GaussianSphere
 {
-	static int iteration;
-	unsigned int orientation_accumulators_num;
+
 	public:
 		GaussianSphere(const GaussianMixtureModel & gmm_,const unsigned int & gaussian_sphere_points_num_=900, const unsigned int & orientation_accumulators_num_=10) :
 			gmm(gmm_),
@@ -70,29 +69,35 @@ class GaussianSphere
 		return gaussian_sphere_points[iteration%orientation_accumulators_num];
 	}
 
+	static int iteration;
 	GaussianMixtureModel gmm;
 	unsigned int gaussian_sphere_points_num;
+	unsigned int orientation_accumulators_num;
 	std::vector<std::vector<Eigen::Vector3f> > gaussian_sphere_points;
 };
 
 class CylinderSegmentationHough : public CylinderSegmentation
 {
-	const unsigned int NORMAL=0;
-	const unsigned int CURVATURE=1;
-	const unsigned int HYBRID=2;
+        public:
+	static const unsigned int NORMAL=0;
+	static const unsigned int CURVATURE=1;
+	static const unsigned int HYBRID=2;
 	// private attributes
 
 	// Direction HT
 	GaussianSphere gaussian_sphere;
 	std::vector<float> cyl_direction_accum;
-	float accumulator_peak_threshold;
+
 
 	// Circle GHT
 	unsigned int angle_bins;
+
+	float angle_step;
 	unsigned int radius_bins;
 	unsigned int position_bins;
-	float angle_step;
 	float r_step;
+	float accumulator_peak_threshold;
+
 	std::vector<std::vector<std::vector<unsigned int> > > cyl_circ_accum;
 
 	unsigned int mode;

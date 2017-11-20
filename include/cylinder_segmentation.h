@@ -31,7 +31,7 @@ class CylinderFitting
 {
 
 	public:
-		CylinderFitting(const Eigen::VectorXf & parameters_, const double & confidence_): confidence(confidence_), parameters(parameters_)
+		CylinderFitting(const Eigen::VectorXf & parameters_, const double & confidence_): parameters(parameters_),confidence(confidence_)
 		{
 
 		}

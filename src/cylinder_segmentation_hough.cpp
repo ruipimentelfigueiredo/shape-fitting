@@ -8,8 +8,8 @@ CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaus
 	gaussian_sphere(gaussian_sphere_),
 	angle_bins(angle_bins_),
 	angle_step(2*M_PI/angle_bins),
-	position_bins(position_bins_),
 	radius_bins(radius_bins_),
+	position_bins(position_bins_),
 	r_step((max_radius-min_radius)/radius_bins),
 	accumulator_peak_threshold(accumulator_peak_threshold_),
 	mode(mode_)
