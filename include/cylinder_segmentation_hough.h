@@ -2,7 +2,6 @@
 #define CYLINDERSEGMENTATIONHOUGH_H
 #include "cylinder_segmentation.h"
 
-
 class GaussianMixtureModel
 {
 	public:
@@ -65,7 +64,7 @@ class GaussianSphere
 	const std::vector<Eigen::Vector3f> & getGaussianSphere()
 	{
 		++iteration;
-		std::cout << iteration%orientation_accumulators_num<< std::endl;
+		//std::cout << iteration%orientation_accumulators_num<< std::endl;
 		return gaussian_sphere_points[iteration%orientation_accumulators_num];
 	}
 

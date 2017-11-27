@@ -27,6 +27,9 @@ CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaus
 			cyl_circ_accum[i][j].resize(radius_bins);
 		}
 	}
+
+	ne.setKSearch (50);
+	ne.setSearchMethod (tree);
 };
 
 
@@ -52,10 +55,6 @@ Eigen::Vector3f CylinderSegmentationHough::findCylinderDirection(const NormalClo
 	// Actually compute the principal curvatures
 	pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr principal_curvatures (new pcl::PointCloud<pcl::PrincipalCurvatures> ());
 	principal_curvatures_estimation.compute (*principal_curvatures);
-
-
-
-
 
 
 	//3. for each point normal
@@ -217,9 +216,9 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 {
 	//1.  Estimate point normals
 	//ROS_DEBUG_STREAM(" 2. Estimate normals");
-	ne.setSearchMethod (tree);
+
 	ne.setInputCloud (point_cloud_in_);
-	ne.setKSearch (50);
+
   	//ne.setRadiusSearch (0.03);
 
 	ne.compute (*cloud_normals);

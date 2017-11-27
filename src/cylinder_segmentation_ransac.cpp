@@ -4,24 +4,28 @@ CylinderSegmentationRansac::CylinderSegmentationRansac(float normal_distance_wei
 	normal_distance_weight(normal_distance_weight_),
 	max_iterations(max_iterations_),
 	distance_threshold(distance_threshold_)
-{};
-
-CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	// Estimate point normals
 	ne.setSearchMethod (tree);
-	ne.setInputCloud (point_cloud_in_);
 	ne.setKSearch (50);
-	ne.compute (*cloud_normals);
+
 
 	// Create the segmentation object for cylinder segmentation and set all the parameters
-	seg.setOptimizeCoefficients (true);
+	seg.setOptimizeCoefficients (do_refine_);
 	seg.setModelType (pcl::SACMODEL_CYLINDER);
 	seg.setMethodType (pcl::SAC_RANSAC);
+	seg.setDistanceThreshold (distance_threshold);
 	seg.setNormalDistanceWeight (normal_distance_weight);
 	seg.setMaxIterations (max_iterations);
-	seg.setDistanceThreshold (distance_threshold);
 	seg.setRadiusLimits (min_radius, max_radius);
+};
+
+CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr & point_cloud_in_)
+{
+	// Compute normals
+	ne.setInputCloud (point_cloud_in_);
+	ne.compute (*cloud_normals);
+
 	seg.setInputCloud (point_cloud_in_);
 	seg.setInputNormals (cloud_normals);
 
@@ -29,7 +33,7 @@ CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 	pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
 	seg.segment (*inliers_cylinder, *coefficients_cylinder);
 
-	std::cout << "inliers:" << inliers_cylinder->indices.size() << std::endl;
+	//std::cout << "inliers:" << inliers_cylinder->indices.size() << std::endl;
 
 	// Extract the cylinder inliers
 	pcl::ExtractIndices<PointT> extract; 
@@ -40,8 +44,6 @@ CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 	if (transformed_cloud->points.empty ()) 
 		std::cerr << "Can't find the cylindrical component." << std::endl;
 
-	std::cout << "in number:" << point_cloud_in_->points.size() << std::endl;
-	std::cout << "out number:" << transformed_cloud->points.size() << std::endl;
 	Eigen::Vector3f cylinder_direction(coefficients_cylinder->values[3],coefficients_cylinder->values[4],coefficients_cylinder->values[5]);
 
 	//Get rotation matrix that aligns the cylinder point cloud with rotation axis
@@ -81,9 +83,12 @@ CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 
 	Eigen::VectorXf coeffs(7,1);
 	coeffs << 
-		cylinder_position[0]+0.5*height*cylinder_direction[0],
-		cylinder_position[1]+0.5*height*cylinder_direction[1],
-		cylinder_position[2]+0.5*height*cylinder_direction[2],
+		//cylinder_position[0]+0.5*height*cylinder_direction[0],
+		//cylinder_position[1]+0.5*height*cylinder_direction[1],
+		//cylinder_position[2]+0.5*height*cylinder_direction[2],
+		cylinder_position[0],
+		cylinder_position[1],
+		cylinder_position[2],
 		cylinder_direction[0],
 		cylinder_direction[1],
 		cylinder_direction[2],
@@ -107,7 +112,7 @@ CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 	// Refine height
 
 	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-	height=max_pt[2]-min_pt[2];
+	//height=max_pt[2]-min_pt[2];
 
 	// Redefine cylinder position (base);
 	//Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
