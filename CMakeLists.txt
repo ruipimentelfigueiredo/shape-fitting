@@ -37,5 +37,18 @@ target_link_libraries (cylinder_segmentation_hough ${PCL_LIBRARIES} ${catkin_LIB
 add_library (cylinder_segmentation_ransac src/cylinder_segmentation.cpp src/cylinder_segmentation_ransac.cpp)
 target_link_libraries (cylinder_segmentation_ransac ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
+# TESTS
+#add_executable(cylinder_generation test/cylinder_generation.cpp)
+#target_link_libraries(cylinder_generation ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+
+#add_executable(cylinder_fitting_test test/cylinder_fitting_test.cpp)
+#target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
+
+#add_executable (cylinder_segmentation_test_clutter test/cylinder_segmentation_test_clutter.cpp)
+#target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+
+#add_executable (cylinder_segmentation_test_clutter2 test/cylinder_segmentation_test_clutter2.cpp)
+#target_link_libraries (cylinder_segmentation_test_clutter2 ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)
+
 
 
