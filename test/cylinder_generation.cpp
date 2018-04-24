@@ -1,5 +1,14 @@
-#include "cylinder_segmentation_hough.h"
+//#include "cylinder_segmentation_hough.h"
 #include <ctime>
+#include <pcl/io/pcd_io.h>
+#include <pcl/common/transforms.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/filters/project_inliers.h>
 //#include <tf/transform_broadcaster.h>
 
 //#include <rosbag/bag.h>
@@ -8,6 +17,9 @@
 
 int main (int argc, char** argv)
 {
+	std::random_device rd{};
+	std::mt19937 gen{rd()};
+
 	/* TODO - Process options */
 	if (argc < 6)
 	{
@@ -95,15 +107,12 @@ int main (int argc, char** argv)
 					float height=heights[h_];
 					float radius=radii[r_];
 					// Generate cylinder according to parameters
-					pcl::PointCloud<PointT> cloud;
+					pcl::PointCloud<pcl::PointXYZ> cloud;
 					cloud.header.frame_id="world";
 
 					float angle_step=2.0*M_PI/angle_samples;
 					float height_step=fabs(height/height_samples);
 
-					//std::cout << "height:" << height.at<float>(0,0) << " radius:" << radius.at<float>(0,0) << std::endl;
-
-	
 					for(int a=0; a < angle_samples; ++a)
 					{
 
@@ -118,7 +127,7 @@ int main (int argc, char** argv)
 						}
 					}
 
-					// TAMPAS
+					// top / down surfaces
 					unsigned int plane_samples=clutter_levels[c]*sqrt(height_samples*angle_samples);
 				
 					float plane_size=2*radius;
@@ -135,10 +144,8 @@ int main (int argc, char** argv)
 							if(sqrt(x*x+y*y)>radius) continue;
 
 							pcl::PointXYZ point(x,y,z);
-							//cloud.push_back(point);
 
 							cloud.push_back(pcl::PointXYZ(x,y,height));
-							//ROS_ERROR_STREAM("YAH:"<<point);
 						}
 					}
 					point_clouds.push_back(cloud);
@@ -147,20 +154,17 @@ int main (int argc, char** argv)
 					Eigen::Vector3f rot_dir;
 					cv::Mat aux(1, 1, CV_32F);
 
+					rot_dir(0,0)=d(gen);
 
-					cv::randn(aux, 0.0, 1.0);
-					rot_dir(0,0)=aux.at<float>(0,0);
+					rot_dir(1,0)=d(gen);
 
-					cv::randn(aux, 0.0, 1.0);
-					rot_dir(1,0)=aux.at<float>(0,0);
-
-					cv::randn(aux, 0.0, 1.0);
-					rot_dir(2,0)=aux.at<float>(0,0);
+					rot_dir(2,0)=d(gen);
 
 					rot_dir.normalize();
 
 					cv::Mat angle(1, 1, CV_32F);
-					cv::randn(angle, 0.0, 1.0);
+					angle=d(gen);
+
 					//Eigen::Vector3f rot_dir(1.0,0.0,0.0);
 					rot_dir.normalize();
 					rot_dir=Eigen::Vector3f::UnitZ();
@@ -204,6 +208,12 @@ int main (int argc, char** argv)
 			}
 		}
 	}
+
+
+
+	// values near the mean are the most likely
+	// standard deviation affects the dispersion of generated values from the mean
+
 	// Then corrupt with diferent levels of noise
 	for(unsigned int n=0; n<noise_levels.size(); ++n)
 	{
@@ -223,15 +233,13 @@ int main (int argc, char** argv)
 						noisy_cloud=cloud;
 						for(unsigned int p=0; p<cloud.size();++p)
 						{
-							cv::Mat aux(1, 1, CV_32F);
-							cv::randn(aux, 0.0, noise_levels[n]*radii[r_]);
-							noisy_cloud.points[p].x+=aux.at<float>(0,0);
+							std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
 
-							cv::randn(aux, 0.0, noise_levels[n]*radii[r_]);
-							noisy_cloud.points[p].y+=aux.at<float>(0,0);
+							noisy_cloud.points[p].x+=d(gen);
 
-							cv::randn(aux, 0.0, noise_levels[n]*radii[r_]);
-							noisy_cloud.points[p].z+=aux.at<float>(0,0);
+							noisy_cloud.points[p].y+=d(gen);
+
+							noisy_cloud.points[p].z+=d(gen);
 						}
 
 						//Transform point cloud
@@ -240,9 +248,9 @@ int main (int argc, char** argv)
 						Eigen::Matrix4f transf=Eigen::Matrix4f::Identity();
 						pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
 
-			    			bag.write("point_cloud",ros::Time::now(), cloud_transf);
-
-
+			    			//bag.write("point_cloud",ros::Time::now(), cloud_transf);
+  						//pcl::io::savePCDFileASCII ("test_pcd.pcd", cloud_transf);
+ 						pcl::io::savePCDFile( "cloud.pcd", cloud_transf, true ); // Binary format
 						ROS_INFO_STREAM(" iteration:" << i << " clutter_level: "<< clutter_levels[c] << " noise_level: "<< noise_levels[n] << " height: " << heights[h_] << " radius: " << radii[r_] << " total iteration: "<< r_+h_*radii.size()+i*radii.size()*heights.size()+c*radii.size()*heights.size()*iterations+n*radii.size()*heights.size()*clutter_levels.size()*iterations); 
 					}
 				}
