@@ -13,7 +13,7 @@ find_package(Boost COMPONENTS system filesystem regex REQUIRED)
 ## Build ##
 ###########
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++11")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -Wno-deprecated-declarations -std=c++11")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 
 ## Specify additional locations of header files
@@ -41,8 +41,8 @@ target_link_libraries (cylinder_segmentation_ransac ${PCL_LIBRARIES})
 add_executable(cylinder_generation test/cylinder_generation.cpp)
 target_link_libraries(cylinder_generation ${PCL_LIBRARIES})
 
-#add_executable(cylinder_fitting_test test/cylinder_fitting_test.cpp)
-#target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
+add_executable(cylinder_fitting_test test/cylinder_fitting_test.cpp)
+target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
 
 #add_executable (cylinder_segmentation_test_clutter test/cylinder_segmentation_test_clutter.cpp)
 #target_link_libraries (cylinder_segmentation_test_clutter ${PCL_LIBRARIES} ${catkin_LIBRARIES} cylinder_segmentation_hough)

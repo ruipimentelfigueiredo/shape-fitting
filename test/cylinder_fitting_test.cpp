@@ -1,101 +1,114 @@
-﻿#include "cylinder_segmentation_hough.h"
+#include "cylinder_segmentation_hough.h"
 #include <ctime>
-#include <tf/transform_broadcaster.h>
-#include <rosbag/view.h>
-#include <active_semantic_mapping/Cylinders.h>
-#include <rosbag/bag.h>
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
 #include "cylinder_segmentation_hough.h"
 #include "cylinder_segmentation_ransac.h"
-#include "pcl_ros/point_cloud.h"
-#include <visualization_msgs/MarkerArray.h>
-#include <helpers.h>
+#include "helpers.h"
 #include <chrono>
 using namespace std;
 using namespace std::chrono;
+#include <pcl/visualization/cloud_viewer.h>
+
+ ////////////////////////////////////////////////////////////////////////////////////////////
+
+/*namespace pcl
+{
+
+  namespace visualization
+  {
+    class PCL_EXPORTS PCLVisualizerCylinder : PCLVisualizer
+    {
+	public: 
+	bool updateCylinder(const pcl::ModelCoefficients & coefficients, const std::string & id = "cylinder", int viewport = 0)	
+	{
+		// Check to see if this ID entry already exists (has it been already added to the visualizer?)
+		ShapeActorMap::iterator am_it = shape_actor_map_->find (id);
+		if (am_it != shape_actor_map_->end ())
+		{
+			pcl::console::print_warn (stderr, "[addCylinder] A shape with id <%s> already exists! Please choose a different id and retry.\n", id.c_str ());
+			return (false);
+		}
+
+		if (coefficients.values.size () != 7)
+		{
+			PCL_WARN ("[addCylinder] Coefficients size does not match expected size (expected 7).\n");
+			return (false);
+		}
+
+		vtkSmartPointer<vtkDataSet> data = createCylinder (coefficients);
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// Get the actor pointer
+		vtkLODActor* actor = vtkLODActor::SafeDownCast (am_it->second);
+		vtkAlgorithm *algo = actor->GetMapper ()->GetInput ()->GetProducerPort ()->GetProducer ();
+		vtkCylinderSource *src = vtkCylinderSource::SafeDownCast (algo);
+
+		src->SetHeight (coefficients[6]);
+		src->SetRadius (coefficients[5]);
+		src->Update ();
+		//actor->GetProperty ()->SetColor (r, g, b);
+		actor->Modified ();
+
+		return (true);
+	}
+};*/
+
 
 int main (int argc, char** argv)
 {
 	/* TODO - Process options */
 	if (argc < 6)
 	{
-		std::cout << "invalid number of arguments: rosbag_dir iterations heights radii noise clutter"<< std::endl;
+		std::cout << "invalid number of arguments: dataset_dir heights radii noise clutter"<< std::endl;
 		exit(-1);
 	}
 
-    	std::string input_rosbag_file = std::string(argv[1]);
-	std::cout << "input_rosbag_file: " << input_rosbag_file<< std::endl;
+	std::string dataset_dir = std::string(argv[1]);
+	std::cout << "dataset_dir: " << dataset_dir << std::endl;
+	std::string ground_truth_dir=dataset_dir+"ground_truth/";
+	std::string point_clouds_dir=dataset_dir+"point_clouds/";
+	std::string output_dir=dataset_dir+"results/";
 
-    	std::string output_rosbag_folder = std::string(argv[2]);
-	std::cout << "output_rosbag_folder: " << output_rosbag_folder<< std::endl;
-
-	unsigned int angle_bins=atoi(argv[3]);
+	// HOUGH PARAMETERS
+	unsigned int angle_bins=atoi(argv[2]);
 	std::cout << "angle_bins: " << angle_bins<< std::endl;
 
-	unsigned int radius_bins=atoi(argv[4]);
+	unsigned int radius_bins=atoi(argv[3]);
 	std::cout << "radius_bins: " << radius_bins<< std::endl;
 
-	unsigned int position_bins=atoi(argv[5]);
+	unsigned int position_bins=atoi(argv[4]);
 	std::cout << "position_bins: " << position_bins<< std::endl;
 
-	unsigned int orientation_accumulators_num=atoi(argv[6]);
+	// OUR HOUGH IMPLEMENTATION PARAMETERS
+	unsigned int orientation_accumulators_num=atoi(argv[5]);
 	std::cout << "orientation_accumulators_num: " << orientation_accumulators_num<< std::endl;
 
-	unsigned int gaussian_sphere_points_num=atoi(argv[7]);
+	unsigned int gaussian_sphere_points_num=atoi(argv[6]);
 	std::cout << "gaussian_sphere_points_num: " << gaussian_sphere_points_num<< std::endl;
 	
-	float accumulator_peak_threshold=atof(argv[8]);
+	float accumulator_peak_threshold=atof(argv[7]);
 	std::cout << "accumulator_peak_threshold: " << accumulator_peak_threshold<< std::endl;
 	
-	float min_radius=atof(argv[9]);
+	float min_radius=atof(argv[8]);
 	std::cout << "min_radius: " << min_radius<< std::endl;
 		
-	float max_radius=atof(argv[10]);
+	float max_radius=atof(argv[9]);
 	std::cout << "max_radius: " << max_radius<< std::endl;
 	
 	// RANSAC PARAMETERS
-	float normal_distance_weight=atof(argv[11]);
+	float normal_distance_weight=atof(argv[10]);
 	std::cout << "normal_distance_weight: " << normal_distance_weight<< std::endl;
 
-	unsigned int max_iterations=atoi(argv[12]);
+	unsigned int max_iterations=atoi(argv[11]);
 	std::cout << "max_iterations: " << max_iterations << std::endl;
 
-	float distance_threshold=atof(argv[13]);
+	float distance_threshold=atof(argv[12]);
 	std::cout << "distance_threshold: " << distance_threshold << std::endl;
 
-	bool do_refine=atoi(argv[14]);
+	bool do_refine=atoi(argv[13]);
 	std::cout << "do_refine: " << do_refine << std::endl;
-
-
-	/*unsigned int angle_bins=30;
-	unsigned int radius_bins=10;
- 	unsigned int position_bins=100;
-	unsigned int orientation_accumulators_num=1;
-	int gaussian_sphere_points_num=450;
-        float accumulator_peak_threshold=0.8;
-	// TESTING PARAMS
- 	float min_radius=0.45;
- 	float max_radius=0.55;*/
-
-
-	ros::init(argc, argv, "cylinder_publisher");
-
-	/**
-	* NodeHandle is the main access point to communications with the ROS system.
-	* The first NodeHandle constructed will fully initialize this node, and the last
-	* NodeHandle destructed will close down the node.
-	*/
-
-	ros::NodeHandle n;
-
-	// For visualization purposes
-	ros::Publisher cloud_pub;
-	cloud_pub=n.advertise<pcl::PointCloud<PointT> >( "cylinders_pcl", 0 );
-
-
-	ros::Publisher detection_pub;
-	detection_pub=n.advertise<visualization_msgs::MarkerArray>( "detections", 0 );
 
 	std::vector<double> weights;
 	std::vector<Eigen::Matrix<double, 3 ,1> > means;
@@ -108,7 +121,6 @@ int main (int argc, char** argv)
 
 	GaussianMixtureModel gmm(weights, means, std_devs);
 	GaussianSphere gaussian_sphere(gmm,gaussian_sphere_points_num,orientation_accumulators_num);
-
 
 	std::vector<boost::shared_ptr<CylinderSegmentation> > cylinder_segmentators;
 
@@ -127,49 +139,14 @@ int main (int argc, char** argv)
 	// HOUGH + PROSAC
 	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHoughProsacRANSAC> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
 
-	std::vector<std::string> topics;
-	topics.push_back(std::string("point_cloud"));
-	topics.push_back(std::string("ground_truth"));
-
-	rosbag::Bag bag;
-
-	bag.open(input_rosbag_file, rosbag::bagmode::Read);
-    	rosbag::View view(bag, rosbag::TopicQuery(topics));
-
+	
 	// Get ground truths
-	std::vector<active_semantic_mapping::Cylinders> ground_truths;
-    	foreach(rosbag::MessageInstance const m, view)
-	{	
-		active_semantic_mapping::Cylinders::ConstPtr s = m.instantiate<active_semantic_mapping::Cylinders>();
-		if (s == NULL)
-			continue;
-
-		ground_truths.push_back(*s);
-	}
-	bag.close();
-
-	unsigned int iterations=6*200;
-
-	ROS_ERROR_STREAM("Number of ground truths:"<<ground_truths.size());
-
-	bag.open(input_rosbag_file, rosbag::bagmode::Read);
-    	rosbag::View view2(bag, rosbag::TopicQuery(topics));
-
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > point_clouds;
-    	foreach(rosbag::MessageInstance const m, view2)
-	{
-
-		pcl::PointCloud<pcl::PointXYZ>::ConstPtr s = m.instantiate<pcl::PointCloud<pcl::PointXYZ> >();
-		if (s == NULL)
-			continue;
-
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-		*cloud=*s;
-		point_clouds.push_back(cloud);
-	}
-
-	bag.close();
-	ROS_ERROR_STREAM("Number of point clouds:"<<point_clouds.size());
+	GroundTruth ground_truths(ground_truth_dir);
+	std::cout << "Number of ground truths:" << ground_truths.ground_truth.size() << std::endl;
+	
+	// Get point clouds
+	PointClouds point_clouds(point_clouds_dir);
+	std::cout << "Number of point_clouds:" << point_clouds.point_clouds.size() << std::endl;
 
 	std::string detections_frame_id="world";
 	std::string marker_detections_namespace_="detections";
@@ -178,69 +155,87 @@ int main (int argc, char** argv)
 	std::vector<float> position_errors;
 
 
+	createDirectory(output_dir);
 
-	for (unsigned int d=0;d < cylinder_segmentators.size() && ros::ok();++d)
+
+
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+	viewer->setBackgroundColor (0, 0, 0);
+	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+        viewer->addCoordinateSystem (1.0);
+        viewer->initCameraParameters ();
+	for (unsigned int d=0;d < cylinder_segmentators.size();++d)
 	{
 
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
 		std::fstream fs_position;
 		std::fstream fs_time;
-		fs_orientation.open (output_rosbag_folder+"_orientation_noise_biased2_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app );
-		fs_radius.open (output_rosbag_folder+"_radius_noise_biased2_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_position.open (output_rosbag_folder+"_position_noise_biased2_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_time.open (output_rosbag_folder+"_time_noise_biased2_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
-		for(unsigned int i=0;i<point_clouds.size() && ros::ok();++i)
-		{	//continue;
+		fs_orientation.open (output_dir+"orientation_noise_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_radius.open (output_dir+"radius_noise_biased_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_position.open (output_dir+"position_noise_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_time.open (output_dir+"time_noise_"              + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
-			active_semantic_mapping::Cylinders ground_truth=ground_truths[i];
+		for(unsigned int i=0;i<point_clouds.point_clouds.size();++i)
+		{	
+			// Ground truth iterations
+			unsigned int iteration=i % ground_truths.ground_truth.size();
+
+			Cylinder ground_truth=ground_truths.ground_truth[iteration];
 
 			pcl::PointCloud<PointT>::Ptr point_cloud(new pcl::PointCloud<PointT>());
-			*point_cloud=*point_clouds[i];
+			*point_cloud=*point_clouds.point_clouds[i];
 
-			/* FITTING */
+			/* FIT */
     			high_resolution_clock::time_point t1 = high_resolution_clock::now();
-			CylinderFitting model_params=cylinder_segmentators[d]->segment(point_clouds[i]);
+			CylinderFitting model_params=cylinder_segmentators[d]->segment(point_clouds.point_clouds[i]);
     			high_resolution_clock::time_point t2 = high_resolution_clock::now();
     			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
-			fs_time << duration << " ";
-			std::cout << "total time: " << duration << " ms"<< std::endl;
-			/* END FITTING */
-			//detections.push_back(model_params);
+			fs_time << duration << " " << "\n";
 
-			float orientation_error=acos(model_params.parameters.segment(3,3).dot(Eigen::Vector3f(ground_truth.cylinders.data[3],ground_truth.cylinders.data[4],ground_truth.cylinders.data[5])));
+			std::cout << "iteration " << i << " of " << point_clouds.point_clouds.size() << " total time: " << duration << " ms"<<  std::endl;
+			/* END FIT */
+
+			/* STORE RESULTS */
+			float orientation_error=acos(model_params.parameters.segment(3,3).dot(Eigen::Vector3f(ground_truth.direction[0],ground_truth.direction[1],ground_truth.direction[2])));
 			if(orientation_error>M_PI/2.0)
 				orientation_error=M_PI-orientation_error;
-			fs_orientation << orientation_error << " ";
+			fs_orientation << orientation_error << " " << "\n";
 
-			float radius_error=fabs(model_params.parameters[6]-ground_truth.cylinders.data[6]);
-			fs_radius << radius_error << " ";
+			float radius_error=fabs(model_params.parameters[6]-ground_truth.radius);
+			fs_radius << radius_error << " " << "\n";
 
+			float position_error=(model_params.parameters.head(3)-Eigen::Vector3f(ground_truth.position[0],
+										   ground_truth.position[1],
+										   ground_truth.position[2])).norm();
+			fs_position << position_error << " " << "\n";
+			/* END STORE RESULTS */
 
-			float position_error=(model_params.parameters.head(3)-Eigen::Vector3f(ground_truth.cylinders.data[0],
-										   ground_truth.cylinders.data[1],
-										   ground_truth.cylinders.data[2])).norm();
-			fs_position << position_error << " ";
-
-			fs_orientation<< "\n";
-			fs_radius<< "\n";
-			fs_position<< "\n";
-			fs_time<< "\n";
-
-			visualization_msgs::MarkerArray markers_;
-			// First delete all markers
-			visualization_msgs::Marker marker_;
-			marker_.action = 3;
-			markers_.markers.push_back(marker_);
-			visualization_msgs::Marker marker=createMarker(model_params.parameters,visualization_msgs::Marker::CYLINDER,detections_frame_id,  0, marker_detections_namespace_);
-			markers_.markers.push_back(marker);
-
-			//if(i<0*200+200&&i>0*200)
+			/* VISUALIZE */
+			pcl::ModelCoefficients model_coefficients;
+			model_coefficients.values.resize (7);
+			model_coefficients.values[0] = model_params.parameters[0];
+			model_coefficients.values[1] = model_params.parameters[1];
+			model_coefficients.values[2] = model_params.parameters[2];
+			model_coefficients.values[3] = model_params.parameters[3];
+			model_coefficients.values[4] = model_params.parameters[4];
+			model_coefficients.values[5] = model_params.parameters[5];
+			model_coefficients.values[6] = model_params.parameters[6];
+			viewer->removeAllShapes();
+			if(i==0)
 			{
-				detection_pub.publish( markers_ );
-				cloud_pub.publish(point_cloud);
+				viewer->addPointCloud<pcl::PointXYZ> (point_cloud, "sample cloud");
+				viewer->addCylinder(model_coefficients,"ground truth");
 			}
+			else
+			{
+  				viewer->updatePointCloud<pcl::PointXYZ> (point_cloud, "sample cloud");
+				viewer->addCylinder(model_coefficients,"ground truth");
+			}
+    			viewer->spinOnce(100);
+
+			/* END VISUALIZE */
 		}
 
 		fs_orientation.close();

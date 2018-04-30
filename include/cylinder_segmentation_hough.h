@@ -21,6 +21,9 @@ class GaussianSphere
  			gaussian_sphere_points_num(gaussian_sphere_points_num_),
 			orientation_accumulators_num(orientation_accumulators_num_)
 		{
+			std::random_device rd{};
+			std::mt19937 gen{rd()};
+
 			iteration=0;
 			// Create randomized structure
 			// By randomly sampling a unitary sphere from a 3D, zero mean Gaussian distribution
@@ -28,32 +31,23 @@ class GaussianSphere
 			for(unsigned int o=0;o<orientation_accumulators_num;++o)
 			{
 				std::cout << "  Creating gaussian sphere number " << o << std::endl;
-				std::vector<Eigen::Vector3f> gaussian_sphere_points_;
+				std::vector<Eigen::Vector3d> gaussian_sphere_points_;
 				for(unsigned int g=0;g<gmm.weights.size();++g)
 				{
 
 					for(unsigned int i=0;i<gaussian_sphere_points_num*gmm.weights[g];++i)
 					{
-						Eigen::Vector3f random_point;
-						cv::Mat aux(1, 1, CV_32F);
-
+		                		std::normal_distribution<> d1{0,gmm.std_devs[g][0]};
+		                		std::normal_distribution<> d2{0,gmm.std_devs[g][1]};
+		                		std::normal_distribution<> d3{0,gmm.std_devs[g][2]};
 						// Generate random patch on the sphere surface
-						cv::randn(aux, gmm.means[g][0], gmm.std_devs[g][0]);
-						random_point(0,0)=aux.at<float>(0,0);
-
-						cv::randn(aux, gmm.means[g][1], gmm.std_devs[g][1]);
-						random_point(1,0)=aux.at<float>(0,0);
-
-						cv::randn(aux, gmm.means[g][2], gmm.std_devs[g][2]);
-						random_point(2,0)=fabs(aux.at<float>(0,0));  // HALF SPHERE ONLY
-
+						Eigen::Vector3d random_point(d1(gen),d2(gen),d3(gen));
 						random_point.normalize();
-
 						gaussian_sphere_points_.push_back(random_point);
 					}
-					//std::cout <<"   "<< gmm.weights[g] << "  " << gaussian_sphere_points_.size()<< std::endl;
+
 				}
-				//std::cout << gaussian_sphere_points_.size() << std::endl;
+
 				gaussian_sphere_points.push_back(gaussian_sphere_points_);
 				std::cout << "  Done" << std::endl;
 			}
@@ -61,7 +55,7 @@ class GaussianSphere
 		};
 
 	
-	const std::vector<Eigen::Vector3f> & getGaussianSphere()
+	const std::vector<Eigen::Vector3d> & getGaussianSphere()
 	{
 		++iteration;
 		//std::cout << iteration%orientation_accumulators_num<< std::endl;
@@ -72,7 +66,7 @@ class GaussianSphere
 	GaussianMixtureModel gmm;
 	unsigned int gaussian_sphere_points_num;
 	unsigned int orientation_accumulators_num;
-	std::vector<std::vector<Eigen::Vector3f> > gaussian_sphere_points;
+	std::vector<std::vector<Eigen::Vector3d> > gaussian_sphere_points;
 };
 
 class CylinderSegmentationHough : public CylinderSegmentation
@@ -85,17 +79,17 @@ class CylinderSegmentationHough : public CylinderSegmentation
 
 	// Direction HT
 	GaussianSphere gaussian_sphere;
-	std::vector<float> cyl_direction_accum;
+	std::vector<double> cyl_direction_accum;
 
 
 	// Circle GHT
 	unsigned int angle_bins;
 
-	float angle_step;
+	double angle_step;
 	unsigned int radius_bins;
 	unsigned int position_bins;
-	float r_step;
-	float accumulator_peak_threshold;
+	double r_step;
+	double accumulator_peak_threshold;
 
 	std::vector<std::vector<std::vector<unsigned int> > > cyl_circ_accum;
 
@@ -103,11 +97,11 @@ class CylinderSegmentationHough : public CylinderSegmentation
 
 
 	// private methods
-	Eigen::Vector3f findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_);
-	Eigen::Matrix<float,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
+	Eigen::Vector3d findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_);
+	Eigen::Matrix<double,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
 
 	public:
-		CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,float min_radius_=0.01,float max_radius_=0.1, float accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false);
+		CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false);
 
 		CylinderFitting segment(const PointCloudT::ConstPtr & point_cloud_in_);
 
