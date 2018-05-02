@@ -180,9 +180,7 @@ int main (int argc, char** argv)
 
 			std::string ground_truth_file=ss.str();
 			Cylinder ground_truth(radius,height,cyl_dir,cyl_pos, ground_truth_file);
-			//std::cout << ground_truth << std::endl;
 			Cylinder test(ground_truth_file);
-			//std::cout << test << std::endl<<std::endl;
                     }
                 }
             }

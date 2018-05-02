@@ -154,10 +154,7 @@ int main (int argc, char** argv)
 	std::vector<Eigen::VectorXf > detections;
 	std::vector<float> position_errors;
 
-
 	createDirectory(output_dir);
-
-
 
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
 	viewer->setBackgroundColor (0, 0, 0);
@@ -173,7 +170,7 @@ int main (int argc, char** argv)
 		std::fstream fs_time;
 
 		fs_orientation.open (output_dir+"orientation_noise_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_radius.open (output_dir+"radius_noise_biased_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_radius.open (output_dir+"radius_noise_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 		fs_position.open (output_dir+"position_noise_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 		fs_time.open (output_dir+"time_noise_"              + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
@@ -234,7 +231,6 @@ int main (int argc, char** argv)
 				viewer->addCylinder(model_coefficients,"ground truth");
 			}
     			viewer->spinOnce(100);
-
 			/* END VISUALIZE */
 		}
 
@@ -243,7 +239,6 @@ int main (int argc, char** argv)
 		fs_position.close();
 		fs_time.close();
 	}
-
 
 	return (0);
 }

@@ -4,7 +4,7 @@ CYLINDER_GENERATION_EXEC="/home/rui/shape-fitting/build/cylinder_generation"
 # Directory where dataset is stored
 DATASET_DIR="/home/rui/shape-fitting/dataset/"
 
-# Number of iterations per noise, outlier,
+# Number of iterations per noise (for robustness against statistical outliers)
 ITERATIONS=200
 
 # Define considered cylinder heights
