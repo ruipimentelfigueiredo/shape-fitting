@@ -76,9 +76,8 @@ class CylinderSegmentation
 			inliers_cylinder(new pcl::PointIndices)
 		{};
 
-		Eigen::Matrix4f refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_);
-
-		virtual CylinderFitting segment(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
+	Eigen::Matrix4f refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_);
+	virtual CylinderFitting segment(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
 };
 
 #endif // CYLINDERSEGMENTATION_H

@@ -110,6 +110,8 @@ int main (int argc, char** argv)
 	bool do_refine=atoi(argv[13]);
 	std::cout << "do_refine: " << do_refine << std::endl;
 
+
+	// Gaussian Sphere Uniform
 	std::vector<double> weights;
 	std::vector<Eigen::Matrix<double, 3 ,1> > means;
 	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs;
@@ -122,6 +124,21 @@ int main (int argc, char** argv)
 	GaussianMixtureModel gmm(weights, means, std_devs);
 	GaussianSphere gaussian_sphere(gmm,gaussian_sphere_points_num,orientation_accumulators_num);
 
+
+	// Gaussian Sphere Biased
+	std::vector<double> weights_biased;
+	std::vector<Eigen::Matrix<double, 3 ,1> > means_biased;
+	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_biased;
+	weights_biased.push_back(1.0);
+	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,1.0);
+	means_biased.push_back(mean_eigen_biased);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.0005,0.0005,0.0005);
+	std_devs_biased.push_back(std_dev_eigen_biased);
+
+	GaussianMixtureModel gmm_biased(weights_biased, means_biased, std_devs_biased);
+	GaussianSphere gaussian_sphere_biased(gmm_biased,gaussian_sphere_points_num,orientation_accumulators_num);
+
+
 	std::vector<boost::shared_ptr<CylinderSegmentation> > cylinder_segmentators;
 
 	// HOUGH NORMAL
@@ -130,8 +147,10 @@ int main (int argc, char** argv)
 	// HOUGH HYBRID
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));
 
-	// RANSAC NORMAL
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationRansac> (new CylinderSegmentationRansac(normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(unsigned int)min_radius,(float)max_radius, do_refine)));
+	// HOUGH HYBRID BIASED
+	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));	
+
+	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationRansac> (new CylinderSegmentationRansac(normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(unsigned int)min_radius,(float)max_radius, do_refine)));
 
 	// HOUGH + RANSAC
 	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHoughRANSAC> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
@@ -163,16 +182,15 @@ int main (int argc, char** argv)
         viewer->initCameraParameters ();
 	for (unsigned int d=0;d < cylinder_segmentators.size();++d)
 	{
-
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
 		std::fstream fs_position;
 		std::fstream fs_time;
 
-		fs_orientation.open (output_dir+"orientation_noise_"+ std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_radius.open (output_dir+"radius_noise_"          + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_position.open (output_dir+"position_noise_"      + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_time.open (output_dir+"time_noise_"              + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_orientation.open (output_dir+"orientation_noise_" + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_radius.open (output_dir+"radius_noise_"           + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_position.open (output_dir+"position_noise_"       + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_time.open (output_dir+"time_noise_"               + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
 		for(unsigned int i=0;i<point_clouds.point_clouds.size();++i)
 		{	
@@ -190,7 +208,6 @@ int main (int argc, char** argv)
     			high_resolution_clock::time_point t2 = high_resolution_clock::now();
     			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
 			fs_time << duration << " " << "\n";
-
 			std::cout << "iteration " << i << " of " << point_clouds.point_clouds.size() << " total time: " << duration << " ms"<<  std::endl;
 			/* END FIT */
 
@@ -203,9 +220,7 @@ int main (int argc, char** argv)
 			float radius_error=fabs(model_params.parameters[6]-ground_truth.radius);
 			fs_radius << radius_error << " " << "\n";
 
-			float position_error=(model_params.parameters.head(3)-Eigen::Vector3f(ground_truth.position[0],
-										   ground_truth.position[1],
-										   ground_truth.position[2])).norm();
+			float position_error=(model_params.parameters.head(2)-Eigen::Vector2f(ground_truth.position[0], ground_truth.position[1])).norm();
 			fs_position << position_error << " " << "\n";
 			/* END STORE RESULTS */
 

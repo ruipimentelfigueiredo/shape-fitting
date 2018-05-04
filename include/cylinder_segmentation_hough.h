@@ -37,15 +37,14 @@ class GaussianSphere
 
 					for(unsigned int i=0;i<gaussian_sphere_points_num*gmm.weights[g];++i)
 					{
-		                		std::normal_distribution<> d1{0,gmm.std_devs[g][0]};
-		                		std::normal_distribution<> d2{0,gmm.std_devs[g][1]};
-		                		std::normal_distribution<> d3{0,gmm.std_devs[g][2]};
+		                		std::normal_distribution<> d1{gmm.means[g][0],gmm.std_devs[g][0]};
+		                		std::normal_distribution<> d2{gmm.means[g][1],gmm.std_devs[g][1]};
+		                		std::normal_distribution<> d3{gmm.means[g][2],gmm.std_devs[g][2]};
 						// Generate random patch on the sphere surface
 						Eigen::Vector3d random_point(d1(gen),d2(gen),d3(gen));
 						random_point.normalize();
 						gaussian_sphere_points_.push_back(random_point);
 					}
-
 				}
 
 				gaussian_sphere_points.push_back(gaussian_sphere_points_);
