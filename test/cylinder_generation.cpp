@@ -98,6 +98,7 @@ int main (int argc, char** argv)
 	std::vector<pcl::PointCloud<pcl::PointXYZ> > point_clouds;
 	std::vector<Eigen::Matrix4d> transfs;
 
+
 	// First, generate 200 point clouds with different radius, heights at random poses
     	for(unsigned int h_=0; h_<heights.size();++h_)
     	{
@@ -173,11 +174,11 @@ int main (int argc, char** argv)
 					transfs.push_back(transf);
 
 
-					unsigned int index=i+o*iterations+r_*iterations*outlier_levels.size()+h_*iterations*outlier_levels.size();
+					unsigned int index=i+o*iterations+r_*iterations*outlier_levels.size()+h_*iterations*outlier_levels.size()*radii.size();
 
 					std::stringstream ss;
 					ss << dataset_dir << "/ground_truth/ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
-
+					
 					std::string ground_truth_file=ss.str();
 					Cylinder ground_truth(radius,height,cyl_dir,cyl_pos, ground_truth_file);
 					Cylinder test(ground_truth_file);
@@ -195,16 +196,17 @@ int main (int argc, char** argv)
 				for(unsigned int i=0; i<iterations; ++i)
 				{
 
-					unsigned int index=i+o*iterations+r_*iterations*outlier_levels.size()+h_*iterations*outlier_levels.size();
+					unsigned int index=i+o*iterations+r_*iterations*outlier_levels.size()+h_*iterations*outlier_levels.size()*radii.size();
 					//std::cout << index << std::endl;
-					pcl::PointCloud<pcl::PointXYZ> cloud=point_clouds[index];
+
 					// Then corrupt with diferent levels of noise
 					for(unsigned int n=0; n<noise_levels.size(); ++n)
 					{
+
 						pcl::PointCloud<pcl::PointXYZ> noisy_cloud;
-						noisy_cloud=cloud;
+						noisy_cloud=point_clouds[index];
 						std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
-						for(unsigned int p=0; p<cloud.size();++p)
+						for(unsigned int p=0; p<noisy_cloud.size();++p)
 						{
 						    noisy_cloud.points[p].x+=d(gen);
 

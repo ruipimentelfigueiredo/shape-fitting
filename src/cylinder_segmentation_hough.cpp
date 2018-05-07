@@ -71,29 +71,25 @@ Eigen::Vector3d CylinderSegmentationHough::findCylinderDirection(const NormalClo
 		Eigen::Vector3d voting_direction=gaussian_sphere_voting[i];
 		for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 		{
+			double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
 			if(mode==NORMAL)
 			{
 				//1 - fabs(dot.product)
-				
-				double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
 				cyl_direction_accum[i]+=normal_weight;
 			}
 			else if(mode==CURVATURE)
 			{
 				double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
-
 				//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
 
-				cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1*10.0;
+				cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1;//*10.0;
 			}
 			else if(mode==HYBRID)
 			{
-				double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
-
 				double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
 				//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
 
-				cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1*10.0;
+				cyl_direction_accum[i]+=normal_weight + curvature_weight*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
 			}
 		}
 

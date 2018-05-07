@@ -25,6 +25,8 @@ noise_levels_number=11;
 alpha_=0.4
 fontsize_=20;
 error_levels=[0.1,5,10,15,20,25,30,35,40,45,50];
+colors=['black','blue','red','gray']
+labels=['Rabbani et al.','Ours Unbiased','Ours Biased']
 
 #ORIENTATION
 hough_orientation_results_0=[]
@@ -32,8 +34,9 @@ hough_orientation_results_1=[]
 hough_orientation_results_2=[]
 
 hough_orientation_file_0 = open(home + "shape-fitting/dataset/results/orientation_noise_0.txt", "r") 
-hough_orientation_file_1 = open(home + "shape-fitting/dataset/results/orientation_noise_1.txt", "r") 
-hough_orientation_file_2 = open(home + "shape-fitting/dataset/results/orientation_noise_2.txt", "r") 
+hough_orientation_file_1 = open(home + "shape-fitting/dataset/results/orientation_noise_2.txt", "r") 
+hough_orientation_file_2 = open(home + "shape-fitting/dataset/results/orientation_noise_4.txt", "r") 
+
 
 for line in hough_orientation_file_0:
   hough_orientation_results_0.append(180.0*float(line)/math.pi)
@@ -90,8 +93,7 @@ for line in hough_radius_file_2:
 hough_radius_results_2 = np.array(hough_radius_results_2).reshape(ground_truth_size,len(hough_radius_results_2)/ground_truth_size)
 
 
-colors=['red','blue','black','gray']
-labels=['Ours (M=20, F=1%)','Ours (M=10, F=1%)','Round-robin','Kriegel et al. (M=10, F=1%)']
+
 
 
 # compute orientation average and standard deviation
@@ -143,10 +145,15 @@ plt.plot(error_levels,hough_orientation_results_mean_2,color=colors[2],label=lab
 error_sup=hough_orientation_results_mean_2+hough_orientation_results_std_2;
 error_inf=hough_orientation_results_mean_2-hough_orientation_results_std_2;
 plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[2])
+manager = plt.get_current_fig_manager()
+manager.resize(*manager.window.maxsize())
+plt.xlabel('noise standard deviation [% of cylinder radius]',fontsize=fontsize_)
+plt.ylabel('absolute orientation error [º]',fontsize=fontsize_)
 
-plt.xlabel('noise standard deviation (% of cylinder radius)',fontsize=fontsize_)
 plt.xticks(color='k', size=fontsize_)
-plt.show()
+plt.yticks(color='k', size=fontsize_)
+plt.legend(fontsize=fontsize_)
+#plt.show()
 
 
 ### Position
@@ -156,7 +163,7 @@ error_sup=hough_position_results_mean_0+hough_position_results_std_0;
 error_inf=hough_position_results_mean_0-hough_position_results_std_0;
 plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
-plt.plot(error_levels,hough_orientation_results_mean_1,color=colors[1],label=labels[1])
+plt.plot(error_levels,hough_position_results_mean_1,color=colors[1],label=labels[1])
 error_sup=hough_position_results_mean_1+hough_position_results_std_1;
 error_inf=hough_position_results_mean_1-hough_position_results_std_1;
 plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[1])
@@ -165,28 +172,38 @@ plt.plot(error_levels,hough_position_results_mean_2,color=colors[2],label=labels
 error_sup=hough_position_results_mean_2+hough_position_results_std_2;
 error_inf=hough_position_results_mean_2-hough_position_results_std_2;
 plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[2])
+manager = plt.get_current_fig_manager()
+manager.resize(*manager.window.maxsize())
+plt.xlabel('noise standard deviation [% of cylinder radius]',fontsize=fontsize_)
+plt.ylabel('absolute position error [m]',fontsize=fontsize_)
+plt.xticks(color='k', size=fontsize_)
+plt.yticks(color='k', size=fontsize_)
+#plt.show()
 
 
 ### Radius
 plt.figure()
-axarr[0].plot(error_levels,hough_radius_results_mean_0,color=colors[0],label=labels[0])
+plt.plot(error_levels,hough_radius_results_mean_0,color=colors[0],label=labels[0])
 error_sup=hough_radius_results_mean_0+hough_radius_results_std_0;
 error_inf=hough_radius_results_mean_0-hough_radius_results_std_0;
-axarr[0].fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
+plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
-axarr[0].plot(error_levels,hough_orientation_results_mean_1,color=colors[1],label=labels[1])
-error_sup=hough_position_results_mean_1+hough_position_results_std_1;
-error_inf=hough_position_results_mean_1-hough_position_results_std_1;
-axarr[0].fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[1])
+plt.plot(error_levels,hough_radius_results_mean_1,color=colors[1],label=labels[1])
+error_sup=hough_radius_results_mean_1+hough_radius_results_std_1;
+error_inf=hough_radius_results_mean_1-hough_radius_results_std_1;
+plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[1])
 
-axarr[0].plot(error_levels,hough_position_results_mean_2,color=colors[2],label=labels[2])
-error_sup=hough_position_results_mean_2+hough_position_results_std_2;
-error_inf=hough_position_results_mean_2-hough_position_results_std_2;
-axarr[0].fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[2])
+plt.plot(error_levels,hough_radius_results_mean_2,color=colors[2],label=labels[2])
+error_sup=hough_radius_results_mean_2+hough_radius_results_std_2;
+error_inf=hough_radius_results_mean_2-hough_radius_results_std_2;
+plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[2])
 
 manager = plt.get_current_fig_manager()
 manager.resize(*manager.window.maxsize())
-
+plt.xlabel('noise standard deviation [% of cylinder radius]',fontsize=fontsize_)
+plt.ylabel('absolute radius error [º]',fontsize=fontsize_)
+plt.xticks(color='k', size=fontsize_)
+plt.yticks(color='k', size=fontsize_)
 plt.show()
 
 

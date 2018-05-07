@@ -132,7 +132,7 @@ int main (int argc, char** argv)
 	weights_biased.push_back(1.0);
 	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,1.0);
 	means_biased.push_back(mean_eigen_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.0005,0.0005,0.0005);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.05,0.05,0.5);
 	std_devs_biased.push_back(std_dev_eigen_biased);
 
 	GaussianMixtureModel gmm_biased(weights_biased, means_biased, std_devs_biased);
@@ -144,11 +144,20 @@ int main (int argc, char** argv)
 	// HOUGH NORMAL
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
 
+	// HOUGH CURVATURE
+	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::CURVATURE)));
+
 	// HOUGH HYBRID
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));
 
+	// HOUGH CURVATURE BIASED
+	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::CURVATURE)));
+
+
 	// HOUGH HYBRID BIASED
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));	
+
+
 
 	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationRansac> (new CylinderSegmentationRansac(normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(unsigned int)min_radius,(float)max_radius, do_refine)));
 
