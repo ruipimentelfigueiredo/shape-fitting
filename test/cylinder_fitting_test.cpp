@@ -124,19 +124,32 @@ int main (int argc, char** argv)
 	GaussianMixtureModel gmm(weights, means, std_devs);
 	GaussianSphere gaussian_sphere(gmm,gaussian_sphere_points_num,orientation_accumulators_num);
 
-
-	// Gaussian Sphere Biased
+	// Gaussian Sphere Top Biased
 	std::vector<double> weights_biased;
 	std::vector<Eigen::Matrix<double, 3 ,1> > means_biased;
 	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_biased;
 	weights_biased.push_back(1.0);
-	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,1.0);
+	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,0.0);
 	means_biased.push_back(mean_eigen_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.05,0.05,0.5);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.005,0.005,0.05);
 	std_devs_biased.push_back(std_dev_eigen_biased);
 
 	GaussianMixtureModel gmm_biased(weights_biased, means_biased, std_devs_biased);
 	GaussianSphere gaussian_sphere_biased(gmm_biased,gaussian_sphere_points_num,orientation_accumulators_num);
+
+
+	// Gaussian Sphere Super Top Biased
+	std::vector<double> weights_super_biased;
+	std::vector<Eigen::Matrix<double, 3 ,1> > means_super_biased;
+	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_super_biased;
+	weights_biased.push_back(1.0);
+	Eigen::Matrix<double, 3 ,1> mean_eigen_super_biased(0,0,1.0);
+	means_super_biased.push_back(mean_eigen_super_biased);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_super_biased(0.005,0.005,0.005);
+	std_devs_super_biased.push_back(std_dev_eigen_super_biased);
+
+	GaussianMixtureModel gmm_super_biased(weights_super_biased, means_super_biased, std_devs_super_biased);
+	GaussianSphere gaussian_sphere_super_biased(gmm_super_biased,gaussian_sphere_points_num,orientation_accumulators_num);
 
 
 	std::vector<boost::shared_ptr<CylinderSegmentation> > cylinder_segmentators;
@@ -144,20 +157,17 @@ int main (int argc, char** argv)
 	// HOUGH NORMAL
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
 
-	// HOUGH CURVATURE
-	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::CURVATURE)));
 
 	// HOUGH HYBRID
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));
-
-	// HOUGH CURVATURE BIASED
-	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::CURVATURE)));
 
 
 	// HOUGH HYBRID BIASED
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));	
 
 
+	// HOUGH HYBRID SUPER BIASED
+	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_super_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));	
 
 	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationRansac> (new CylinderSegmentationRansac(normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(unsigned int)min_radius,(float)max_radius, do_refine)));
 

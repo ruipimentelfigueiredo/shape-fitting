@@ -100,14 +100,16 @@ int main (int argc, char** argv)
 
 
 	// First, generate 200 point clouds with different radius, heights at random poses
-    	for(unsigned int h_=0; h_<heights.size();++h_)
-    	{
-		for(unsigned int r_=0; r_<radii.size();++r_)
+		
+	for(unsigned int i=0; i<iterations; ++i)
+	{
+		for(unsigned int o=0; o<outlier_levels.size();++o)
 		{
-			for(unsigned int o=0; o<outlier_levels.size();++o)
-			{
-				for(unsigned int i=0; i<iterations; ++i)
+		    	for(unsigned int h_=0; h_<heights.size();++h_)
+		    	{
+				for(unsigned int r_=0; r_<radii.size();++r_)
 				{
+
 					double height=heights[h_];
 					double radius=radii[r_];
 					// Generate cylinder according to parameters
@@ -174,7 +176,7 @@ int main (int argc, char** argv)
 					transfs.push_back(transf);
 
 
-					unsigned int index=i+o*iterations+r_*iterations*outlier_levels.size()+h_*iterations*outlier_levels.size()*radii.size();
+					unsigned int index=r_+h_*radii.size()+o*radii.size()*heights.size()+i*radii.size()*heights.size()*outlier_levels.size();
 
 					std::stringstream ss;
 					ss << dataset_dir << "/ground_truth/ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
@@ -187,22 +189,20 @@ int main (int argc, char** argv)
 		}
 	}
 
-    	for(unsigned int h_=0; h_<heights.size();++h_)
-    	{
-		for(unsigned int r_=0; r_<radii.size();++r_)
+	for(unsigned int i=0; i<iterations; ++i)
+	{
+		for(unsigned int o=0; o<outlier_levels.size();++o)
 		{
-			for(unsigned int o=0; o<outlier_levels.size();++o)
-			{
-				for(unsigned int i=0; i<iterations; ++i)
+		    	for(unsigned int h_=0; h_<heights.size();++h_)
+		    	{
+				for(unsigned int r_=0; r_<radii.size();++r_)
 				{
-
-					unsigned int index=i+o*iterations+r_*iterations*outlier_levels.size()+h_*iterations*outlier_levels.size()*radii.size();
-					//std::cout << index << std::endl;
-
 					// Then corrupt with diferent levels of noise
 					for(unsigned int n=0; n<noise_levels.size(); ++n)
 					{
 
+						unsigned int index=r_+h_*radii.size()+o*radii.size()*heights.size()+i*radii.size()*heights.size()*outlier_levels.size();
+						//std::cout << index << std::endl;
 						pcl::PointCloud<pcl::PointXYZ> noisy_cloud;
 						noisy_cloud=point_clouds[index];
 						std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
