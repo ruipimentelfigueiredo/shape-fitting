@@ -142,7 +142,7 @@ int main (int argc, char** argv)
 	std::vector<double> weights_super_biased;
 	std::vector<Eigen::Matrix<double, 3 ,1> > means_super_biased;
 	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_super_biased;
-	weights_biased.push_back(1.0);
+	weights_super_biased.push_back(1.0);
 	Eigen::Matrix<double, 3 ,1> mean_eigen_super_biased(0,0,1.0);
 	means_super_biased.push_back(mean_eigen_super_biased);
 	Eigen::Matrix<double, 3 ,1> std_dev_eigen_super_biased(0.005,0.005,0.005);
@@ -199,7 +199,7 @@ int main (int argc, char** argv)
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
         viewer->addCoordinateSystem (1.0);
         viewer->initCameraParameters ();
-	for (unsigned int d=0;d < cylinder_segmentators.size();++d)
+	for (unsigned int d=3;d < cylinder_segmentators.size();++d)
 	{
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
@@ -223,6 +223,7 @@ int main (int argc, char** argv)
 
 			/* FIT */
     			high_resolution_clock::time_point t1 = high_resolution_clock::now();
+			std::cout << "ola"<< iteration << std::endl;
 			CylinderFitting model_params=cylinder_segmentators[d]->segment(point_clouds.point_clouds[i]);
     			high_resolution_clock::time_point t2 = high_resolution_clock::now();
     			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
