@@ -89,7 +89,7 @@ Eigen::Vector3d CylinderSegmentationHough::findCylinderDirection(const NormalClo
 				double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
 				//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
 
-				cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
+				cyl_direction_accum[i]+=normal_weight*curvature_weight;//*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
 			}
 		}
 

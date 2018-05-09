@@ -43,7 +43,7 @@ hough_orientation_results_2=[]
 
 hough_orientation_file_0 = open(home + "shape-fitting/dataset/results/orientation_noise_0.txt", "r") 
 hough_orientation_file_1 = open(home + "shape-fitting/dataset/results/orientation_noise_1.txt", "r") 
-hough_orientation_file_2 = open(home + "shape-fitting/dataset/results/orientation_noise_2.txt", "r") 
+hough_orientation_file_2 = open(home + "shape-fitting/dataset/results/orientation_noise_3.txt", "r") 
 
 
 for line in hough_orientation_file_0:
@@ -140,7 +140,7 @@ hough_radius_results_std_2  = np.std(hough_radius_results_2, axis=(0,2))
 ### Plots (noise)
 
 ### Orientation
-plt.figure(figsize=(8, 8))
+plt.figure(figsize=(8, 6))
 print hough_orientation_results_mean_0[outlier_index,:]
 print error_levels
 plt.plot(error_levels,hough_orientation_results_mean_0[outlier_index,:],color=colors[0],label=labels[0])
@@ -166,10 +166,10 @@ plt.xticks(color='k', size=fontsize_)
 plt.yticks(color='k', size=fontsize_)
 plt.legend(fontsize=fontsize_)
 #plt.show()
-
+plt.savefig('noise_orientation_error.pdf',format='pdf',pad_inches=0.8)
 
 ### Position
-plt.figure()
+plt.figure(figsize=(8, 6))
 plt.plot(error_levels,hough_position_results_mean_0[outlier_index,:],color=colors[0],label=labels[0])
 error_sup=hough_position_results_mean_0[outlier_index,:]+hough_position_results_std_0[outlier_index,:];
 error_inf=hough_position_results_mean_0[outlier_index,:]-hough_position_results_std_0[outlier_index,:];
@@ -191,10 +191,10 @@ plt.ylabel('absolute position error [m]',fontsize=fontsize_)
 plt.xticks(color='k', size=fontsize_)
 plt.yticks(color='k', size=fontsize_)
 #plt.show()
-
+plt.savefig('noise_position_error.pdf',format='pdf')
 
 ### Radius
-plt.figure()
+plt.figure(figsize=(8, 6))
 plt.plot(error_levels,hough_radius_results_mean_0[outlier_index,:],color=colors[0],label=labels[0])
 error_sup=hough_radius_results_mean_0[outlier_index,:]+hough_radius_results_std_0[outlier_index,:];
 error_inf=hough_radius_results_mean_0[outlier_index,:]-hough_radius_results_std_0[outlier_index,:];
@@ -217,12 +217,12 @@ plt.ylabel('absolute radius error [m]',fontsize=fontsize_)
 plt.xticks(color='k', size=fontsize_)
 plt.yticks(color='k', size=fontsize_)
 #plt.show()
-
+plt.savefig('noise_radius_error.pdf',format='pdf')
 
 ### Plots (outliers)
 
 ### Orientation
-plt.figure()
+plt.figure(figsize=(8, 6))
 plt.plot(outlier_levels_,hough_orientation_results_mean_0[:,noise_index],color=colors[0],label=labels[0])
 error_sup=hough_orientation_results_mean_0[:,noise_index]+hough_orientation_results_std_0[:,noise_index];
 error_inf=hough_orientation_results_mean_0[:,noise_index]-hough_orientation_results_std_0[:,noise_index];
@@ -241,14 +241,13 @@ manager = plt.get_current_fig_manager()
 manager.resize(*manager.window.maxsize())
 plt.xlabel('outliers [% of cylinder surface points]',fontsize=fontsize_)
 plt.ylabel('absolute orientation error [$^\circ$]',fontsize=fontsize_)
-
 plt.xticks(color='k', size=fontsize_)
 plt.yticks(color='k', size=fontsize_)
 plt.legend(fontsize=fontsize_)
-#plt.show()
+plt.savefig('outliers_orientation_error.pdf',format='pdf')
 
 ### Position
-plt.figure()
+plt.figure(figsize=(8, 6))
 plt.plot(outlier_levels_,hough_position_results_mean_0[:,noise_index],color=colors[0],label=labels[0])
 error_sup=hough_position_results_mean_0[:,noise_index]+hough_position_results_std_0[:,noise_index];
 error_inf=hough_position_results_mean_0[:,noise_index]-hough_position_results_std_0[:,noise_index];
@@ -267,13 +266,14 @@ manager = plt.get_current_fig_manager()
 manager.resize(*manager.window.maxsize())
 plt.xlabel('outliers [% of cylinder surface points]',fontsize=fontsize_)
 plt.ylabel('absolute position error [m]',fontsize=fontsize_)
-
 plt.xticks(color='k', size=fontsize_)
 plt.yticks(color='k', size=fontsize_)
 plt.legend(fontsize=fontsize_)
+plt.savefig('outliers_position_error.pdf',format='pdf')
+
 
 ### Radius
-plt.figure()
+plt.figure(figsize=(8, 6))
 plt.plot(outlier_levels_,hough_radius_results_mean_0[:,noise_index],color=colors[0],label=labels[0])
 error_sup=hough_radius_results_mean_0[:,noise_index]+hough_radius_results_std_0[:,noise_index];
 error_inf=hough_radius_results_mean_0[:,noise_index]-hough_radius_results_std_0[:,noise_index];
@@ -296,5 +296,6 @@ plt.ylabel('absolute radius error [m]',fontsize=fontsize_)
 plt.xticks(color='k', size=fontsize_)
 plt.yticks(color='k', size=fontsize_)
 plt.legend(fontsize=fontsize_)
+plt.savefig('outliers_radius_error.pdf',format='pdf')
 plt.show()
 
