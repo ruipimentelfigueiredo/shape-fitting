@@ -129,14 +129,13 @@ int main (int argc, char** argv)
 	std::vector<Eigen::Matrix<double, 3 ,1> > means_biased;
 	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_biased;
 	weights_biased.push_back(1.0);
-	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,0.0);
+	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,1.0);
 	means_biased.push_back(mean_eigen_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.005,0.005,0.05);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.5,0.5,0.5);
 	std_devs_biased.push_back(std_dev_eigen_biased);
 
 	GaussianMixtureModel gmm_biased(weights_biased, means_biased, std_devs_biased);
 	GaussianSphere gaussian_sphere_biased(gmm_biased,gaussian_sphere_points_num,orientation_accumulators_num);
-
 
 	// Gaussian Sphere Super Top Biased
 	std::vector<double> weights_super_biased;
@@ -145,11 +144,24 @@ int main (int argc, char** argv)
 	weights_super_biased.push_back(1.0);
 	Eigen::Matrix<double, 3 ,1> mean_eigen_super_biased(0,0,1.0);
 	means_super_biased.push_back(mean_eigen_super_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_super_biased(0.005,0.005,0.005);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_super_biased(0.05,0.05,0.05);
 	std_devs_super_biased.push_back(std_dev_eigen_super_biased);
 
 	GaussianMixtureModel gmm_super_biased(weights_super_biased, means_super_biased, std_devs_super_biased);
 	GaussianSphere gaussian_sphere_super_biased(gmm_super_biased,gaussian_sphere_points_num,orientation_accumulators_num);
+
+	// Gaussian Sphere Mega Top Biased
+	std::vector<double> weights_mega_biased;
+	std::vector<Eigen::Matrix<double, 3 ,1> > means_mega_biased;
+	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_mega_biased;
+	weights_mega_biased.push_back(1.0);
+	Eigen::Matrix<double, 3 ,1> mean_eigen_mega_biased(0,0,1.0);
+	means_mega_biased.push_back(mean_eigen_mega_biased);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_mega_biased(0.05,0.05,0.05);
+	std_devs_mega_biased.push_back(std_dev_eigen_mega_biased);
+
+	GaussianMixtureModel gmm_mega_biased(weights_mega_biased, means_mega_biased, std_devs_mega_biased);
+	GaussianSphere gaussian_sphere_mega_biased(gmm_mega_biased,gaussian_sphere_points_num,orientation_accumulators_num);
 
 
 	std::vector<boost::shared_ptr<CylinderSegmentation> > cylinder_segmentators;
@@ -167,7 +179,11 @@ int main (int argc, char** argv)
 
 
 	// HOUGH HYBRID SUPER BIASED
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_super_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));	
+	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_super_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));
+
+
+	// HOUGH HYBRID MEGA BIASED
+	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_mega_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));	
 
 	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationRansac> (new CylinderSegmentationRansac(normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(unsigned int)min_radius,(float)max_radius, do_refine)));
 
@@ -199,7 +215,7 @@ int main (int argc, char** argv)
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
         viewer->addCoordinateSystem (1.0);
         viewer->initCameraParameters ();
-	for (unsigned int d=1;d < cylinder_segmentators.size();++d)
+	for (unsigned int d=0;d < cylinder_segmentators.size();++d)
 	{
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
