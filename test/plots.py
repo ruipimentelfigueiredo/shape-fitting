@@ -33,6 +33,7 @@ fontsize_=20
 error_levels=[0.1,10,20,30,40,50,60,70,80,90,100]
 noise_levels_number=len(error_levels)
 outlier_levels_=[0,50,100,150,200]
+occlusion_levels_=[0,20,40,60,80]
 colors=['black','blue','red','gray']
 labels=['Rabbani et al.','Ours (Unbiased)','Ours (Weak Vertical-Bias)','Ours (Strong Vertical-Bias)']
 
@@ -358,5 +359,104 @@ plt.xticks(color='k', size=fontsize_)
 plt.yticks(color='k', size=fontsize_)
 plt.legend(fontsize=fontsize_)
 plt.savefig('outliers_radius_error.pdf',format='pdf')
+
+
+
+### Plots (occlusion)
+
+### Orientation
+plt.figure(figsize=(8, 6))
+plt.plot(occlusion_levels_,hough_orientation_results_mean_0[:,noise_index],color=colors[0],label=labels[0])
+error_sup=hough_orientation_results_mean_0[:,noise_index]+hough_orientation_results_std_0[:,noise_index];
+error_inf=hough_orientation_results_mean_0[:,noise_index]-hough_orientation_results_std_0[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
+
+plt.plot(occlusion_levels_,hough_orientation_results_mean_1[:,noise_index],color=colors[1],label=labels[1])
+error_sup=hough_orientation_results_mean_1[:,noise_index]+hough_orientation_results_std_1[:,noise_index];
+error_inf=hough_orientation_results_mean_1[:,noise_index]-hough_orientation_results_std_1[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[1])
+
+plt.plot(occlusion_levels_,hough_orientation_results_mean_2[:,noise_index],color=colors[2],label=labels[2])
+error_sup=hough_orientation_results_mean_2[:,noise_index]+hough_orientation_results_std_2[:,noise_index];
+error_inf=hough_orientation_results_mean_2[:,noise_index]-hough_orientation_results_std_2[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[2])
+
+plt.plot(occlusion_levels_,hough_orientation_results_mean_3[:,noise_index],color=colors[3],label=labels[3])
+error_sup=hough_orientation_results_mean_3[:,noise_index]+hough_orientation_results_std_3[:,noise_index];
+error_inf=hough_orientation_results_mean_3[:,noise_index]-hough_orientation_results_std_3[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[3])
+
+manager = plt.get_current_fig_manager()
+manager.resize(*manager.window.maxsize())
+plt.xlabel('outliers [% of cylinder surface points]',fontsize=fontsize_)
+plt.ylabel('absolute orientation error [$^\circ$]',fontsize=fontsize_)
+plt.xticks(color='k', size=fontsize_)
+plt.yticks(color='k', size=fontsize_)
+plt.legend(fontsize=fontsize_)
+plt.savefig('occlusion_orientation_error.pdf',format='pdf')
+
+### Position
+plt.figure(figsize=(8, 6))
+plt.plot(occlusion_levels_,hough_position_results_mean_0[:,noise_index],color=colors[0],label=labels[0])
+error_sup=hough_position_results_mean_0[:,noise_index]+hough_position_results_std_0[:,noise_index];
+error_inf=hough_position_results_mean_0[:,noise_index]-hough_position_results_std_0[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
+
+plt.plot(occlusion_levels_,hough_position_results_mean_1[:,noise_index],color=colors[1],label=labels[1])
+error_sup=hough_position_results_mean_1[:,noise_index]+hough_position_results_std_1[:,noise_index];
+error_inf=hough_position_results_mean_1[:,noise_index]-hough_position_results_std_1[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[1])
+
+plt.plot(occlusion_levels_,hough_position_results_mean_2[:,noise_index],color=colors[2],label=labels[2])
+error_sup=hough_position_results_mean_2[:,noise_index]+hough_position_results_std_2[:,noise_index];
+error_inf=hough_position_results_mean_2[:,noise_index]-hough_position_results_std_2[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[2])
+
+plt.plot(occlusion_levels_,hough_position_results_mean_3[:,noise_index],color=colors[3],label=labels[3])
+error_sup=hough_position_results_mean_3[:,noise_index]+hough_position_results_std_3[:,noise_index];
+error_inf=hough_position_results_mean_3[:,noise_index]-hough_position_results_std_3[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[3])
+
+manager = plt.get_current_fig_manager()
+manager.resize(*manager.window.maxsize())
+plt.xlabel('outliers [% of cylinder surface points]',fontsize=fontsize_)
+plt.ylabel('absolute position error [m]',fontsize=fontsize_)
+plt.xticks(color='k', size=fontsize_)
+plt.yticks(color='k', size=fontsize_)
+plt.legend(fontsize=fontsize_)
+plt.savefig('occlusion_position_error.pdf',format='pdf')
+
+
+### Radius
+plt.figure(figsize=(8, 6))
+plt.plot(occlusion_levels_,hough_radius_results_mean_0[:,noise_index],color=colors[0],label=labels[0])
+error_sup=hough_radius_results_mean_0[:,noise_index]+hough_radius_results_std_0[:,noise_index];
+error_inf=hough_radius_results_mean_0[:,noise_index]-hough_radius_results_std_0[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
+
+plt.plot(occlusion_levels_,hough_radius_results_mean_1[:,noise_index],color=colors[1],label=labels[1])
+error_sup=hough_radius_results_mean_1[:,noise_index]+hough_radius_results_std_1[:,noise_index];
+error_inf=hough_radius_results_mean_1[:,noise_index]-hough_radius_results_std_1[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[1])
+
+plt.plot(occlusion_levels_,hough_radius_results_mean_2[:,noise_index],color=colors[2],label=labels[2])
+error_sup=hough_radius_results_mean_2[:,noise_index]+hough_radius_results_std_2[:,noise_index];
+error_inf=hough_radius_results_mean_2[:,noise_index]-hough_radius_results_std_2[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[2])
+
+plt.plot(occlusion_levels_,hough_radius_results_mean_3[:,noise_index],color=colors[3],label=labels[3])
+error_sup=hough_radius_results_mean_3[:,noise_index]+hough_radius_results_std_3[:,noise_index];
+error_inf=hough_radius_results_mean_3[:,noise_index]-hough_radius_results_std_3[:,noise_index];
+plt.fill_between(occlusion_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[3])
+
+manager = plt.get_current_fig_manager()
+manager.resize(*manager.window.maxsize())
+plt.xlabel('outliers [% of cylinder surface points]',fontsize=fontsize_)
+plt.ylabel('absolute radius error [m]',fontsize=fontsize_)
+
+plt.xticks(color='k', size=fontsize_)
+plt.yticks(color='k', size=fontsize_)
+plt.legend(fontsize=fontsize_)
+plt.savefig('occlusion_radius_error.pdf',format='pdf')
 plt.show()
 

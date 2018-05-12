@@ -28,6 +28,7 @@ CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaus
 		}
 	}
 
+  	//ne.setRadiusSearch (0.03);
 	ne.setKSearch (50);
 	ne.setSearchMethod (tree);
 };
@@ -214,8 +215,6 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	//ROS_DEBUG_STREAM(" 2. Estimate normals");
 
 	ne.setInputCloud (point_cloud_in_);
-
-  	//ne.setRadiusSearch (0.03);
 
 	ne.compute (*cloud_normals);
 

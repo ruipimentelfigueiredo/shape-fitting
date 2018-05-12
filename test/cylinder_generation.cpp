@@ -47,16 +47,21 @@ int main (int argc, char** argv)
 	static std::string outlier_levels_ = std::string(argv[6]);
 	std::cout << "outliers: " << outlier_levels_ << std::endl;
 
-	static unsigned int height_sampling_density = atoi(argv[7]);
+
+	static std::string occlusion_levels_ = std::string(argv[7]);
+	std::cout << "occlusion_levels: " << occlusion_levels_ << std::endl;
+
+	static unsigned int height_sampling_density = atoi(argv[8]);
 	std::cout << "height_sampling_density: " << height_sampling_density<< std::endl;
 
-	static unsigned int angle_sampling_density = atoi(argv[8]);
+	static unsigned int angle_sampling_density = atoi(argv[9]);
 	std::cout << "angle_sampling_density: " << angle_sampling_density<< std::endl;
 
 	std::vector<double> heights;
 	std::vector<double> radii;
 	std::vector<double> noise_levels; // percentage of object radius (std_dev)
 	std::vector<double> outlier_levels; // percentage of object size (std_dev)
+	std::vector<double> occlusion_levels; // percentage of object size (std_dev)
 
 	double j;
 	std::stringstream ss_(heights_);
@@ -86,10 +91,21 @@ int main (int argc, char** argv)
 		ss_.ignore();
 	}
 
+
 	ss_=std::stringstream(outlier_levels_);
 	while (ss_ >> j)
 	{
 	outlier_levels.push_back(j);
+
+	if (ss_.peek() == ',')
+		ss_.ignore();
+	}
+
+
+	ss_=std::stringstream(occlusion_levels_);
+	while (ss_ >> j)
+	{
+	occlusion_levels.push_back(j);
 
 	if (ss_.peek() == ',')
 		ss_.ignore();
@@ -105,85 +121,90 @@ int main (int argc, char** argv)
 	{
 		for(unsigned int o=0; o<outlier_levels.size();++o)
 		{
-		    	for(unsigned int h_=0; h_<heights.size();++h_)
-		    	{
-				for(unsigned int r_=0; r_<radii.size();++r_)
-				{
-
-					double height=heights[h_];
-					double radius=radii[r_];
-					// Generate cylinder according to parameters
-					pcl::PointCloud<pcl::PointXYZ> cloud;
-					cloud.header.frame_id="world";
-
-					double angle_step=2.0*M_PI/angle_sampling_density;
-					double height_step=fabs(height/height_sampling_density);
-
-					for(unsigned int a=0; a < angle_sampling_density; ++a)
+			for(unsigned int occ=0; occ<occlusion_levels.size();++occ)
+			{
+			    	for(unsigned int h_=0; h_<heights.size();++h_)
+			    	{
+					for(unsigned int r_=0; r_<radii.size();++r_)
 					{
-						double x,y,z;
-						x=cos(angle_step*a)*fabs(radius);
-						y=sin(angle_step*a)*fabs(radius);
-						for(unsigned int h=0; h < height_sampling_density; ++h)
+
+						double height=heights[h_];
+						double radius=radii[r_];
+						// Generate cylinder according to parameters
+						pcl::PointCloud<pcl::PointXYZ> cloud;
+						cloud.header.frame_id="world";
+
+						double angle_step=2.0*M_PI/angle_sampling_density;
+						double height_step=fabs(height/height_sampling_density);
+
+						unsigned int angle_sampling_density_final=round((1.0-occlusion_levels[occ])*angle_sampling_density);
+						//std::cout << angle_sampling_density_final << " " << occlusion_levels[occ] << std::endl;
+						for(unsigned int a=0; a < angle_sampling_density_final; ++a)
 						{
-						    z=(double)height_step*h;
-						    pcl::PointXYZ point(x,y,z);
-						    cloud.push_back(point);
+							double x,y,z;
+							x=cos(angle_step*a)*fabs(radius);
+							y=sin(angle_step*a)*fabs(radius);
+							for(unsigned int h=0; h < height_sampling_density; ++h)
+							{
+							    z=(double)height_step*h;
+							    pcl::PointXYZ point(x,y,z);
+							    cloud.push_back(point);
+							}
 						}
-					}
 
 
-					// top / down surfaces
-					unsigned int plane_samples=outlier_levels[o]*sqrt(height_sampling_density*angle_sampling_density);
+						// top / down surfaces
+						unsigned int plane_samples=outlier_levels[o]*sqrt(height_sampling_density*angle_sampling_density);
 
-					double plane_size=2*radius;
-					double plane_min=0.0-radius;
-					double plane_step=(double)plane_size/plane_samples;
-					double z=0.0;
-					for(unsigned int x_=0; x_<plane_samples;++x_)
-					{
-						double x=plane_min+x_*plane_step;
-						for(unsigned int y_=0; y_<plane_samples;++y_)
+						double plane_size=2*radius;
+						double plane_min=0.0-radius;
+						double plane_step=(double)plane_size/plane_samples;
+						double z=0.0;
+						for(unsigned int x_=0; x_<plane_samples;++x_)
 						{
+							double x=plane_min+x_*plane_step;
+							for(unsigned int y_=0; y_<plane_samples;++y_)
+							{
 
-						    double y=plane_min+y_*plane_step;
-						    if(sqrt(x*x+y*y)>radius) continue;
+							    double y=plane_min+y_*plane_step;
+							    if(sqrt(x*x+y*y)>radius) continue;
 
-						    pcl::PointXYZ point(x,y,z);
-						    cloud.push_back(pcl::PointXYZ(x,y,height));
+							    pcl::PointXYZ point(x,y,z);
+							    cloud.push_back(pcl::PointXYZ(x,y,height));
+							}
 						}
-					}
 
-					point_clouds.push_back(cloud);
+						point_clouds.push_back(cloud);
 
-					// Generate random orientation
-					Eigen::Vector3d rot_dir(dis(gen),dis(gen),dis(gen));
-					rot_dir.normalize();
+						// Generate random orientation
+						Eigen::Vector3d rot_dir(dis(gen),dis(gen),dis(gen));
+						rot_dir.normalize();
 
-					double angle;
-					angle=dis(gen);
+						double angle;
+						angle=dis(gen);
 
-					rot_dir.normalize();
-					rot_dir=Eigen::Vector3d::UnitZ();
-					Eigen::Matrix3d rot;
-					rot=Eigen::AngleAxisd(M_PI*angle,rot_dir);
+						rot_dir.normalize();
+						rot_dir=Eigen::Vector3d::UnitZ();
+						Eigen::Matrix3d rot;
+						rot=Eigen::AngleAxisd(M_PI*angle,rot_dir);
 
-					Eigen::Vector3d cyl_dir=Eigen::Vector3d::UnitZ();
-					Eigen::Vector3d cyl_pos(0,0,0);
-					Eigen::Matrix4d transf;
-					transf.block(0,0,3,3)=rot;
-					//transf.block(0,4,3,1)=cyl_pos;
-					transfs.push_back(transf);
+						Eigen::Vector3d cyl_dir=Eigen::Vector3d::UnitZ();
+						Eigen::Vector3d cyl_pos(0,0,0);
+						Eigen::Matrix4d transf;
+						transf.block(0,0,3,3)=rot;
+						//transf.block(0,4,3,1)=cyl_pos;
+						transfs.push_back(transf);
 
 
-					unsigned int index=r_+h_*radii.size()+o*radii.size()*heights.size()+i*radii.size()*heights.size()*outlier_levels.size();
-
-					std::stringstream ss;
-					ss << dataset_dir << "/ground_truth/ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
+						unsigned int index=r_+h_*radii.size()+occ*radii.size()*heights.size()+o*radii.size()*heights.size()*occlusion_levels.size()+i*radii.size()*heights.size()*occlusion_levels.size()*outlier_levels.size();
+						//std::cout << index << std::endl;
+						std::stringstream ss;
+						ss << dataset_dir << "/ground_truth/ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
 					
-					std::string ground_truth_file=ss.str();
-					Cylinder ground_truth(radius,height,cyl_dir,cyl_pos, ground_truth_file);
-					Cylinder test(ground_truth_file);
+						std::string ground_truth_file=ss.str();
+						Cylinder ground_truth(radius,height,cyl_dir,cyl_pos, ground_truth_file);
+						Cylinder test(ground_truth_file);
+					}
 				}
 			}
 		}
@@ -193,36 +214,39 @@ int main (int argc, char** argv)
 	{
 		for(unsigned int o=0; o<outlier_levels.size();++o)
 		{
-		    	for(unsigned int h_=0; h_<heights.size();++h_)
-		    	{
-				for(unsigned int r_=0; r_<radii.size();++r_)
-				{
-					// Then corrupt with diferent levels of noise
-					for(unsigned int n=0; n<noise_levels.size(); ++n)
+			for(unsigned int occ=0; occ<occlusion_levels.size();++occ)
+			{
+			    	for(unsigned int h_=0; h_<heights.size();++h_)
+			    	{
+					for(unsigned int r_=0; r_<radii.size();++r_)
 					{
-
-						unsigned int index=r_+h_*radii.size()+o*radii.size()*heights.size()+i*radii.size()*heights.size()*outlier_levels.size();
-						//std::cout << index << std::endl;
-						pcl::PointCloud<pcl::PointXYZ> noisy_cloud;
-						noisy_cloud=point_clouds[index];
-						std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
-						for(unsigned int p=0; p<noisy_cloud.size();++p)
+						// Then corrupt with diferent levels of noise
+						for(unsigned int n=0; n<noise_levels.size(); ++n)
 						{
-						    noisy_cloud.points[p].x+=d(gen);
 
-						    noisy_cloud.points[p].y+=d(gen);
+							unsigned int index=r_+h_*radii.size()+occ*radii.size()*heights.size()+o*radii.size()*heights.size()*occlusion_levels.size()+i*radii.size()*heights.size()*occlusion_levels.size()*outlier_levels.size();
+							//std::cout << index << std::endl;
+							pcl::PointCloud<pcl::PointXYZ> noisy_cloud;
+							noisy_cloud=point_clouds[index];
+							std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
+							for(unsigned int p=0; p<noisy_cloud.size();++p)
+							{
+							    noisy_cloud.points[p].x+=d(gen);
 
-						    noisy_cloud.points[p].z+=d(gen);
+							    noisy_cloud.points[p].y+=d(gen);
+
+							    noisy_cloud.points[p].z+=d(gen);
+							}
+
+							//Transform point cloud
+							pcl::PointCloud<pcl::PointXYZ> cloud_transf;
+							// transfs[index]
+							Eigen::Matrix4f transf=Eigen::Matrix4f::Identity();
+							pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
+							std::stringstream ss;
+							ss << dataset_dir << "/point_clouds/cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
+							pcl::io::savePCDFile(ss.str(), cloud_transf); // Binary format
 						}
-
-						//Transform point cloud
-						pcl::PointCloud<pcl::PointXYZ> cloud_transf;
-						// transfs[index]
-						Eigen::Matrix4f transf=Eigen::Matrix4f::Identity();
-						pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
-						std::stringstream ss;
-						ss << dataset_dir << "/point_clouds/cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
-						pcl::io::savePCDFile(ss.str(), cloud_transf); // Binary format
 					}
 				}
 			}
