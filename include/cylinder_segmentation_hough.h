@@ -93,6 +93,7 @@ class CylinderSegmentationHough : public CylinderSegmentation
 	std::vector<std::vector<std::vector<unsigned int> > > cyl_circ_accum;
 
 	unsigned int mode;
+	bool soft_voting;
 
 
 	// private methods
@@ -100,7 +101,7 @@ class CylinderSegmentationHough : public CylinderSegmentation
 	Eigen::Matrix<double,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
 
 	public:
-		CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false);
+		CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false, bool soft_voting_=true);
 
 		CylinderFitting segment(const PointCloudT::ConstPtr & point_cloud_in_);
 

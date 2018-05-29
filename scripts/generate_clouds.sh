@@ -14,17 +14,20 @@ HEIGHTS="1.0,2.0,3.0,4.0,5.0"
 RADII="0.5"
 
 # Define noise (std_dev) levels
-#NOISE_STD_DEVS="0.001,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50"
-NOISE_STD_DEVS="0.001"
+NOISE_STD_DEVS="0.0,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50"
+#NOISE_STD_DEVS="0.0"
+#NOISE_STD_DEVS="0.001"
 #NOISE_STD_DEVS="0.001"
 
 
 # Define outlier levels
-OUTLIERS="0"
+OUTLIERS="0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0"
+
+#OUTLIERS="0"
 
 # Define occlusion levels
-OCCLUSION_LEVELS="0.0,0.2,0.4,0.6,0.8"
-
+#OCCLUSION_LEVELS="0.0,0.2,0.4,0.6,0.8"
+OCCLUSION_LEVELS="0.0"
 
 # Define height sampling density
 HEIGHT_SAMPLES=30

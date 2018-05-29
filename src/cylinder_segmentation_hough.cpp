@@ -3,7 +3,7 @@
 
 int GaussianSphere::iteration;
 
-CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_) : 
+CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_, bool soft_voting_) : 
 	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
 	gaussian_sphere(gaussian_sphere_),
 	angle_bins(angle_bins_),
@@ -12,7 +12,8 @@ CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaus
 	position_bins(position_bins_),
 	r_step((max_radius-min_radius)/radius_bins),
 	accumulator_peak_threshold(accumulator_peak_threshold_),
-	mode(mode_)
+	mode(mode_),
+	soft_voting(soft_voting_)
 {
 	// Alocate memory for direction accumulator
 	cyl_direction_accum.resize(gaussian_sphere.gaussian_sphere_points_num);
@@ -38,8 +39,6 @@ CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaus
 
 Eigen::Vector3d CylinderSegmentationHough::findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_)
 {
-
-
 	// Setup the principal curvatures computation
 	pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> principal_curvatures_estimation;
 
@@ -59,41 +58,85 @@ Eigen::Vector3d CylinderSegmentationHough::findCylinderDirection(const NormalClo
 
 
 	//3. for each point normal
-	//ROS_DEBUG_STREAM(" 3. Step 1");
-			
-	//ROS_DEBUG_STREAM("  3.1. Reset accumulator");
 
 	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
 
 	const std::vector<Eigen::Vector3d> & gaussian_sphere_voting=gaussian_sphere.getGaussianSphere();
-	//ROS_DEBUG_STREAM("  3.2. Vote");
-	for(unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
+
+        if(soft_voting)
 	{
-		Eigen::Vector3d voting_direction=gaussian_sphere_voting[i];
+		for(unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
+		{
+			Eigen::Vector3d voting_direction=gaussian_sphere_voting[i];
+			for(unsigned int s = 0; s < cloud_normals->size(); ++s)
+			{
+				double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
+				if(mode==NORMAL)
+				{
+					//1 - fabs(dot.product)
+					cyl_direction_accum[i]+=normal_weight;
+				}
+				else if(mode==CURVATURE)
+				{
+					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
+					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
+
+					cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1;//*10.0;
+				}
+				else if(mode==HYBRID)
+				{
+					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
+					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
+
+					cyl_direction_accum[i]+=normal_weight*curvature_weight;//*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
+				}
+			}
+
+		}
+	}
+	else
+	{
 		for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 		{
-			double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
-			if(mode==NORMAL)
+			int best_direction_index_=0;
+			double best_direction_score=0;
+			for(unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 			{
-				//1 - fabs(dot.product)
-				cyl_direction_accum[i]+=normal_weight;
-			}
-			else if(mode==CURVATURE)
-			{
-				double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
-				//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
+				Eigen::Vector3d voting_direction=gaussian_sphere_voting[i];
+				
+				double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
+				double best_direction_score_temp=0;
+				if(mode==NORMAL)
+				{
+					//1 - fabs(dot.product)
+					best_direction_score_temp=normal_weight;
+				}
+				else if(mode==CURVATURE)
+				{
+					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
+					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
 
-				cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1;//*10.0;
-			}
-			else if(mode==HYBRID)
-			{
-				double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
-				//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
+					best_direction_score_temp=curvature_weight*principal_curvatures->points[s].pc1;
+					//cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1;//*10.0;
+				}
+				else if(mode==HYBRID)
+				{
+					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
+					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
 
-				cyl_direction_accum[i]+=normal_weight*curvature_weight;//*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
+					//cyl_direction_accum[i]+=normal_weight*curvature_weight;//*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
+					best_direction_score_temp=normal_weight*curvature_weight;
+				}
+
+				if(best_direction_score_temp>best_direction_score)
+				{
+					best_direction_index_=i;
+					best_direction_score=best_direction_score_temp;
+				}
 			}
+
+			cyl_direction_accum[best_direction_index_]+=1;
 		}
-
 	}
 
 
