@@ -207,8 +207,8 @@ Eigen::Matrix<double,5,1> CylinderSegmentationHough::findCylinderPositionRadius(
 				double v=it->y - (double)min_pt[1] ;
 		
 				// Get discretized coordinates
-				unsigned int u_hough=floor( (current_radius*cos(current_angle)+u)/u_position_step);
-				unsigned int v_hough=floor( (current_radius*sin(current_angle)+v)/v_position_step);
+				unsigned int u_hough=floor( (current_radius*cos(current_angle)+u)/u_position_step); // TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
+				unsigned int v_hough=floor( (current_radius*sin(current_angle)+v)/v_position_step); // TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
 
 				//if(u_hough<0||v_hough<0||u_hough>=position_bins||v_hough>=position_bins)
 				if(u_hough>=position_bins)

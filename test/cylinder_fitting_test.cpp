@@ -131,7 +131,7 @@ int main (int argc, char** argv)
 	weights_biased.push_back(1.0);
 	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,1.0);
 	means_biased.push_back(mean_eigen_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.5,0.5,0.5);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.1,0.1,0.1);
 	std_devs_biased.push_back(std_dev_eigen_biased);
 
 	GaussianMixtureModel gmm_biased(weights_biased, means_biased, std_devs_biased);
@@ -227,9 +227,8 @@ int main (int argc, char** argv)
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
         viewer->addCoordinateSystem (1.0);
         viewer->initCameraParameters ();*/
-	for (unsigned int d=0;d < 1;++d)
+	for (unsigned int d=4;d < 6;++d)
 	{
-		//if(d==1||d==3||d==5||d==7) continue;
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
 		std::fstream fs_position;

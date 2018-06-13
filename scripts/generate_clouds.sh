@@ -5,7 +5,7 @@ CYLINDER_GENERATION_EXEC="/home/rui/shape-fitting/build/cylinder_generation"
 DATASET_DIR="/home/rui/shape-fitting/dataset/"
 
 # Number of iterations per noise and parameter
-ITERATIONS=200
+ITERATIONS=500
 
 # Define considered cylinder heights
 HEIGHTS="1.0,2.0,3.0,4.0,5.0"
