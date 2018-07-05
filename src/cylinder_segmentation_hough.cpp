@@ -1,9 +1,28 @@
-#include "cylinder_segmentation_hough.h"
+/*
+ *  Copyright (C) 2018 Rui Pimentel de Figueiredo
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *  
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 
+/*!    
+    \author Rui Figueiredo : ruipimentelfigueiredo
+*/
+
+#include "cylinder_segmentation_hough.h"
 
 int GaussianSphere::iteration;
 
-CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_,unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_, bool soft_voting_) : 
+CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_, unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_, bool soft_voting_) : 
 	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
 	gaussian_sphere(gaussian_sphere_),
 	angle_bins(angle_bins_),
