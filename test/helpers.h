@@ -104,10 +104,47 @@ class Cylinder
 		Eigen::Vector3d position;
 };
 
+
+class Sphere
+{
+	public:
+		Sphere(const std::string & ground_truth_file)
+		{
+			std::fstream myfile(ground_truth_file, std::ios_base::in);
+			myfile >> std::setprecision(5) 
+			       >> radius 
+			       >> position[0] 
+			       >> position[1] 
+			       >> position[2];
+		};
+
+		Sphere(const double & radius_, const Eigen::Vector3d & position_, const std::string & ground_truth_file) :
+			radius(radius_), 
+			position(position_)
+		{
+                        std::ofstream myfile;
+                        myfile.open(ground_truth_file);
+                        myfile << std::setprecision(5)
+                               << radius << " "
+                               << position[0] << " "
+                               << position[1] << " "
+                               << position[2];
+		};
+       		friend std::ostream &operator<<(std::ostream &os, const Sphere& obj);
+
+
+		double radius;
+		Eigen::Vector3d position;
+};
+
+
 std::ostream &operator<<(std::ostream &os, const Cylinder& obj) { 
 	return os << obj.radius << " " << obj.height << " " << obj.direction.transpose() << " " << obj.position.transpose() << std::endl;
 };
 
+std::ostream &operator<<(std::ostream &os, const Sphere& obj) { 
+	return os << obj.radius << " " << obj.position.transpose() << std::endl;
+};
 
 class GroundTruth 
 {

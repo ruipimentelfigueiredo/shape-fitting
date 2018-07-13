@@ -27,6 +27,9 @@ target_link_libraries (cylinder_segmentation_ransac ${PCL_LIBRARIES})
 add_executable(cylinder_generation test/cylinder_generation.cpp)
 target_link_libraries(cylinder_generation ${PCL_LIBRARIES})
 
+add_executable(sphere_generation test/sphere_generation.cpp)
+target_link_libraries(sphere_generation ${PCL_LIBRARIES})
+
 add_executable(cylinder_fitting_test test/cylinder_fitting_test.cpp)
 target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} cylinder_segmentation_hough cylinder_segmentation_ransac)
 
