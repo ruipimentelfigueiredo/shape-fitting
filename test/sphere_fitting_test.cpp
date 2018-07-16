@@ -173,11 +173,11 @@ int main (int argc, char** argv)
 
 	createDirectory(output_dir);
 
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+	/*boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
 	viewer->setBackgroundColor (0, 0, 0);
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
         viewer->addCoordinateSystem (1.0);
-        viewer->initCameraParameters ();
+        viewer->initCameraParameters ();*/
 	for (unsigned int d=0;d < sphere_segmentators.size();++d)
 	{
 		std::fstream fs_radius;
@@ -217,7 +217,7 @@ int main (int argc, char** argv)
 			/* END STORE RESULTS */
 
 			/* VISUALIZE */
-			pcl::ModelCoefficients model_coefficients;
+			/*pcl::ModelCoefficients model_coefficients;
 			model_coefficients.values.resize (4);
 			model_coefficients.values[0] = model_params.parameters[0];
 			model_coefficients.values[1] = model_params.parameters[1];
@@ -235,7 +235,7 @@ int main (int argc, char** argv)
   				viewer->updatePointCloud<pcl::PointXYZ> (point_cloud, "sample cloud");
 				viewer->addSphere(model_coefficients,"ground truth");
 			}
-    			viewer->spinOnce(100);
+    			viewer->spinOnce(100);*/
 			/* END VISUALIZE */
 		}
 

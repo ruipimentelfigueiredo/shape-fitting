@@ -17,15 +17,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <Eigen/Geometry>
 class FittingData
 {
-
 	public:
+		FittingData() {};
 		FittingData(const Eigen::VectorXf & parameters_, const double & confidence_): parameters(parameters_),confidence(confidence_)
 		{
 
 		}
+	static const unsigned int CYLINDER=0;
+	static const unsigned int SPHERE=1;
 
  	Eigen::VectorXf parameters;
 	double confidence;
+	unsigned int type;
 };
 
 #endif // FITTINGDATA_H
