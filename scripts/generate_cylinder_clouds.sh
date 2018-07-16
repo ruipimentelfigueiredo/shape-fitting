@@ -2,7 +2,7 @@
 CYLINDER_GENERATION_EXEC="/home/rui/shape-fitting/build/cylinder_generation"
 
 # Directory where dataset is stored
-DATASET_DIR="/home/rui/shape-fitting/dataset/"
+DATASET_DIR="/home/rui/ws/src/shape_detection_fitting/lib/shape-fitting/dataset/cylinder/"
 
 # Number of iterations per noise and parameter
 ITERATIONS=500

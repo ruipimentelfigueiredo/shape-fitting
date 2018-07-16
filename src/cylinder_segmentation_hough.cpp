@@ -1,18 +1,12 @@
 /*
- *  Copyright (C) 2018 Rui Pimentel de Figueiredo
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
@@ -48,6 +42,14 @@ CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaus
 		}
 	}
 
+	cos_angle.resize(angle_bins);
+	sin_angle.resize(angle_bins);
+	for(unsigned int w=0; w<angle_bins;++w)
+	{
+		double current_angle=w*angle_step;
+		cos_angle[w]=cos(current_angle);// TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
+		sin_angle[w]=sin(current_angle);// TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
+	}
   	//ne.setRadiusSearch (0.03);
 	ne.setKSearch (50);
 	ne.setSearchMethod (tree);
@@ -204,38 +206,36 @@ Eigen::Matrix<double,5,1> CylinderSegmentationHough::findCylinderPositionRadius(
 	////ROS_DEBUG_STREAM(" min="<< min_pt <<" max="<<max_pt);
 	double u_position_step=(double)(max_pt-min_pt)[0]/position_bins;
 	double v_position_step=(double)(max_pt-min_pt)[1]/position_bins;
+	double u_position_step_inv=(double)1.0/u_position_step;
+	double v_position_step_inv=(double)1.0/v_position_step;
 
-	//ROS_DEBUG_STREAM("  4.1. Reset accumulator");
+	// Reset Accumulator;
 	for (unsigned int u_index=0; u_index < position_bins; ++u_index) {
 		for (unsigned int v_index=0; v_index < position_bins; ++v_index) {
 			std::fill(cyl_circ_accum[u_index][v_index].begin(),cyl_circ_accum[u_index][v_index].end(), 0);
 		}
 	}
 	
-	//ROS_DEBUG_STREAM("  4.2. Vote");
+ 	// Vote
 	for(unsigned int r=0; r<radius_bins;++r)
 	{	
 		double current_radius=r_step*r+min_radius;
-
 		for(unsigned int w=0; w<angle_bins;++w)
 		{
-			double current_angle=w*angle_step;
 			for(PointCloudT::const_iterator it = point_cloud_in_->begin(); it != point_cloud_in_->end(); ++it)
 			{
 				double u=it->x - (double)min_pt[0];
 				double v=it->y - (double)min_pt[1] ;
 		
 				// Get discretized coordinates
-				unsigned int u_hough=floor( (current_radius*cos(current_angle)+u)/u_position_step); // TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
-				unsigned int v_hough=floor( (current_radius*sin(current_angle)+v)/v_position_step); // TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
+				unsigned int u_hough=floor( (current_radius*cos_angle[w]+u)*u_position_step_inv); 
+				unsigned int v_hough=floor( (current_radius*sin_angle[w]+v)*v_position_step_inv); 
 
 				//if(u_hough<0||v_hough<0||u_hough>=position_bins||v_hough>=position_bins)
 				if(u_hough>=position_bins)
 					continue;//u_hough=position_bins-1;
 				if(v_hough>=position_bins)
 					continue;//v_hough=position_bins-1;
-				//	continue;
-
 
 				++cyl_circ_accum[u_hough][v_hough][r];
 			}
@@ -263,7 +263,7 @@ Eigen::Matrix<double,5,1> CylinderSegmentationHough::findCylinderPositionRadius(
 	double best_u=best_u_bin*u_position_step+(double)min_pt[0];
 	double best_v=best_v_bin*v_position_step+(double)min_pt[1];
 	double best_r=best_r_bin*r_step+min_radius;
-	////ROS_DEBUG_STREAM("    best votes="<< most_votes<<" best_u="<< best_u_bin <<" best_v="<<best_v_bin<<" best_r="<<best_r);
+
 	// Get u v in original frame
 	Eigen::Matrix<double,5,1> result;
 	result << best_u, best_v, min_pt[2], best_r, ((double)max_pt[2]-(double)min_pt[2]);
@@ -271,22 +271,13 @@ Eigen::Matrix<double,5,1> CylinderSegmentationHough::findCylinderPositionRadius(
 
 }
 
-CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr & point_cloud_in_)
+FittingData CylinderSegmentationHough::fit(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	//1.  Estimate point normals
-	//ROS_DEBUG_STREAM(" 2. Estimate normals");
-
 	ne.setInputCloud (point_cloud_in_);
-
 	ne.compute (*cloud_normals);
-
-
-	//std::cout << "output points.size (): " << principal_curvatures->points.size () << std::endl;
-
     	Eigen::Vector3d cylinder_direction=findCylinderDirection(cloud_normals,point_cloud_in_);
 	
-	//ROS_DEBUG_STREAM(" 4. Step 2");
-
 	//Get rotation matrix
 	Eigen::Matrix4d R2;
 	R2=Eigen::Matrix4d::Identity();
@@ -297,7 +288,7 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	{
 		cylinder_direction=-cylinder_direction;
 	}
-       	//Eigen::Vector3d rot_axis = up.cross(cylinder_direction);
+
 	Eigen::Vector3d rot_axis = cylinder_direction.cross(up);
 
 	rot_axis.normalize();
@@ -386,7 +377,7 @@ CylinderFitting CylinderSegmentationHough::segment(const PointCloudT::ConstPtr &
 	final_coeffs << coeffs,
 			height;
 
-	CylinderFitting cylinder_fitting(final_coeffs,inlier_ratio_);
+	FittingData cylinder_fitting(final_coeffs,inlier_ratio_);
 
 	return cylinder_fitting;
 }

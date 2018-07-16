@@ -1,23 +1,16 @@
 /*
- *  Copyright (C) 2018 Rui Pimentel de Figueiredo
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/transforms.h>
@@ -48,8 +41,8 @@ int main (int argc, char** argv)
 	std::string dataset_dir = std::string(argv[1]);
 	std::cout << "dataset_dir: " << dataset_dir << std::endl;
 
-	std::string ground_truth_dir = dataset_dir+"/ground_truth";
-	std::string point_clouds_dir = dataset_dir+"/point_clouds";
+	std::string ground_truth_dir = dataset_dir+"/ground_truth/";
+	std::string point_clouds_dir = dataset_dir+"/point_clouds/";
 	createDirectory(ground_truth_dir);
 	createDirectory(point_clouds_dir);
 
@@ -220,7 +213,7 @@ int main (int argc, char** argv)
 						unsigned int index=r_+h_*radii.size()+occ*radii.size()*heights.size()+o*radii.size()*heights.size()*occlusion_levels.size()+i*radii.size()*heights.size()*occlusion_levels.size()*outlier_levels.size();
 						//std::cout << index << std::endl;
 						std::stringstream ss;
-						ss << dataset_dir << "/ground_truth/ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
+						ss << ground_truth_dir << "ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
 					
 						std::string ground_truth_file=ss.str();
 						Cylinder ground_truth(radius,height,cyl_dir,cyl_pos, ground_truth_file);
@@ -265,7 +258,7 @@ int main (int argc, char** argv)
 							Eigen::Matrix4f transf=Eigen::Matrix4f::Identity();
 							pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
 							std::stringstream ss;
-							ss << dataset_dir << "/point_clouds/cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
+							ss << point_clouds_dir << "cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
 							pcl::io::savePCDFile(ss.str(), cloud_transf); // Binary format
 						}
 					}

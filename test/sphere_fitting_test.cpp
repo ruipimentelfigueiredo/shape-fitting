@@ -12,12 +12,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
 
-#include "cylinder_segmentation_hough.h"
+
 #include <ctime>
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
-#include "cylinder_segmentation_hough.h"
-#include "cylinder_segmentation_ransac.h"
+#include "sphere_fitting_hough.h"
 #include "helpers.h"
 #include <chrono>
 using namespace std;
@@ -86,42 +85,39 @@ int main (int argc, char** argv)
 	std::string output_dir=dataset_dir+"results/";
 
 	// HOUGH PARAMETERS
-	unsigned int angle_bins=atoi(argv[2]);
-	std::cout << "angle_bins: " << angle_bins<< std::endl;
-
-	unsigned int radius_bins=atoi(argv[3]);
+	unsigned int radius_bins=atoi(argv[2]);
 	std::cout << "radius_bins: " << radius_bins<< std::endl;
 
-	unsigned int position_bins=atoi(argv[4]);
+	unsigned int position_bins=atoi(argv[3]);
 	std::cout << "position_bins: " << position_bins<< std::endl;
 
 	// OUR HOUGH IMPLEMENTATION PARAMETERS
-	unsigned int orientation_accumulators_num=atoi(argv[5]);
+	unsigned int orientation_accumulators_num=atoi(argv[4]);
 	std::cout << "orientation_accumulators_num: " << orientation_accumulators_num<< std::endl;
 
-	unsigned int gaussian_sphere_points_num=atoi(argv[6]);
+	unsigned int gaussian_sphere_points_num=atoi(argv[5]);
 	std::cout << "gaussian_sphere_points_num: " << gaussian_sphere_points_num<< std::endl;
 	
-	float accumulator_peak_threshold=atof(argv[7]);
+	float accumulator_peak_threshold=atof(argv[6]);
 	std::cout << "accumulator_peak_threshold: " << accumulator_peak_threshold<< std::endl;
 	
-	float min_radius=atof(argv[8]);
+	float min_radius=atof(argv[7]);
 	std::cout << "min_radius: " << min_radius<< std::endl;
 		
-	float max_radius=atof(argv[9]);
+	float max_radius=atof(argv[8]);
 	std::cout << "max_radius: " << max_radius<< std::endl;
 	
 	// RANSAC PARAMETERS
-	float normal_distance_weight=atof(argv[10]);
+	float normal_distance_weight=atof(argv[9]);
 	std::cout << "normal_distance_weight: " << normal_distance_weight<< std::endl;
 
-	unsigned int max_iterations=atoi(argv[11]);
+	unsigned int max_iterations=atoi(argv[10]);
 	std::cout << "max_iterations: " << max_iterations << std::endl;
 
-	float distance_threshold=atof(argv[12]);
+	float distance_threshold=atof(argv[11]);
 	std::cout << "distance_threshold: " << distance_threshold << std::endl;
 
-	bool do_refine=atoi(argv[13]);
+	bool do_refine=atoi(argv[12]);
 	std::cout << "do_refine: " << do_refine << std::endl;
 
 
@@ -151,73 +147,14 @@ int main (int argc, char** argv)
 	GaussianMixtureModel gmm_biased(weights_biased, means_biased, std_devs_biased);
 	GaussianSphere gaussian_sphere_biased(gmm_biased,gaussian_sphere_points_num,orientation_accumulators_num);
 
-	// Gaussian Sphere Super Top Biased
-	std::vector<double> weights_super_biased;
-	std::vector<Eigen::Matrix<double, 3 ,1> > means_super_biased;
-	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_super_biased;
-	weights_super_biased.push_back(1.0);
-	Eigen::Matrix<double, 3 ,1> mean_eigen_super_biased(0,0,1.0);
-	means_super_biased.push_back(mean_eigen_super_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_super_biased(0.05,0.05,0.05);
-	std_devs_super_biased.push_back(std_dev_eigen_super_biased);
-
-	GaussianMixtureModel gmm_super_biased(weights_super_biased, means_super_biased, std_devs_super_biased);
-	GaussianSphere gaussian_sphere_super_biased(gmm_super_biased,gaussian_sphere_points_num,orientation_accumulators_num);
-
-	// Gaussian Sphere Mega Top Biased
-	/*std::vector<double> weights_mega_biased;
-	std::vector<Eigen::Matrix<double, 3 ,1> > means_mega_biased;
-	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_mega_biased;
-	weights_mega_biased.push_back(1.0);
-	Eigen::Matrix<double, 3 ,1> mean_eigen_mega_biased(0,0,1.0);
-	means_mega_biased.push_back(mean_eigen_mega_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_mega_biased(0.05,0.05,0.05);
-	std_devs_mega_biased.push_back(std_dev_eigen_mega_biased);
-
-	GaussianMixtureModel gmm_mega_biased(weights_mega_biased, means_mega_biased, std_devs_mega_biased);
-	GaussianSphere gaussian_sphere_mega_biased(gmm_mega_biased,gaussian_sphere_points_num,orientation_accumulators_num);*/
-
-
-	std::vector<boost::shared_ptr<CylinderSegmentation> > cylinder_segmentators;
+	std::vector<boost::shared_ptr<SphereFittingHough> > sphere_segmentators;
 
 	// HOUGH NORMAL
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL, false, false)));
-
-	// HOUGH NORMAL (soft-voting)
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL, false, true)));
-
-
-	// HOUGH HYBRID
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID,false, false)));
-
-	// HOUGH HYBRID (soft-voting)
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID,false, true)));
+	sphere_segmentators.push_back(boost::shared_ptr<SphereFittingHough> (new SphereFittingHough(gaussian_sphere,(unsigned int)position_bins,(unsigned int)radius_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold, false)));
 
 
 	// HOUGH HYBRID BIASED
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID,false, false)));	
-
-	// HOUGH HYBRID BIASED (soft-voting)
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID,false, true)));	
-
-
-	// HOUGH HYBRID SUPER BIASED
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_super_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID,false, false)));
-
-	// HOUGH HYBRID SUPER BIASED (soft-voting)
-	cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_super_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID,false, true)));
-
-
-	// HOUGH HYBRID MEGA BIASED
-	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationHough> (new CylinderSegmentationHough(gaussian_sphere_mega_biased,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::HYBRID)));	
-
-	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderSegmentationRansac> (new CylinderSegmentationRansac(normal_distance_weight,(unsigned int)max_iterations,(unsigned int)distance_threshold,(unsigned int)min_radius,(float)max_radius, do_refine)));
-
-	// HOUGH + RANSAC
-	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHoughRANSAC> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
-	
-	// HOUGH + PROSAC
-	//cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHoughProsacRANSAC> (new CylinderSegmentationHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderSegmentationHough::NORMAL)));
+	sphere_segmentators.push_back(boost::shared_ptr<SphereFittingHough> (new SphereFittingHough(gaussian_sphere_biased,(unsigned int)position_bins,(unsigned int)radius_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,false)));	
 
 	
 	// Get ground truths
@@ -236,19 +173,17 @@ int main (int argc, char** argv)
 
 	createDirectory(output_dir);
 
-	/*boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
 	viewer->setBackgroundColor (0, 0, 0);
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
         viewer->addCoordinateSystem (1.0);
-        viewer->initCameraParameters ();*/
-	for (unsigned int d=4;d < 6;++d)
+        viewer->initCameraParameters ();
+	for (unsigned int d=0;d < sphere_segmentators.size();++d)
 	{
-		std::fstream fs_orientation;
 		std::fstream fs_radius;
 		std::fstream fs_position;
 		std::fstream fs_time;
 
-		fs_orientation.open (output_dir+"orientation_noise_" + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 		fs_radius.open (output_dir+"radius_noise_"           + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 		fs_position.open (output_dir+"position_noise_"       + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 		fs_time.open (output_dir+"time_noise_"               + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
@@ -265,7 +200,8 @@ int main (int argc, char** argv)
 
 			/* FIT */
     			high_resolution_clock::time_point t1 = high_resolution_clock::now();
-			FittingData model_params=cylinder_segmentators[d]->fit(point_clouds.point_clouds[i]);
+
+			FittingData model_params=sphere_segmentators[d]->fit(point_clouds.point_clouds[i]);
     			high_resolution_clock::time_point t2 = high_resolution_clock::now();
     			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
 			fs_time << duration << " " << "\n";
@@ -273,44 +209,36 @@ int main (int argc, char** argv)
 			/* END FIT */
 
 			/* STORE RESULTS */
-			float orientation_error=acos(model_params.parameters.segment(3,3).dot(Eigen::Vector3f(ground_truth.direction[0],ground_truth.direction[1],ground_truth.direction[2])));
-			if(orientation_error>M_PI/2.0)
-				orientation_error=M_PI-orientation_error;
-			fs_orientation << orientation_error << " " << "\n";
-
-			float radius_error=fabs(model_params.parameters[6]-ground_truth.radius);
+			float radius_error=fabs(model_params.parameters[3]-ground_truth.radius);
 			fs_radius << radius_error << " " << "\n";
 
-			float position_error=(model_params.parameters.head(2)-Eigen::Vector2f(ground_truth.position[0], ground_truth.position[1])).norm();
+			float position_error=(Eigen::Vector3f(model_params.parameters[0],model_params.parameters[1],model_params.parameters[2])-Eigen::Vector3f(ground_truth.position[0], ground_truth.position[1],ground_truth.position[2])).norm();
 			fs_position << position_error << " " << "\n";
 			/* END STORE RESULTS */
 
 			/* VISUALIZE */
-			/*pcl::ModelCoefficients model_coefficients;
-			model_coefficients.values.resize (7);
+			pcl::ModelCoefficients model_coefficients;
+			model_coefficients.values.resize (4);
 			model_coefficients.values[0] = model_params.parameters[0];
 			model_coefficients.values[1] = model_params.parameters[1];
 			model_coefficients.values[2] = model_params.parameters[2];
 			model_coefficients.values[3] = model_params.parameters[3];
-			model_coefficients.values[4] = model_params.parameters[4];
-			model_coefficients.values[5] = model_params.parameters[5];
-			model_coefficients.values[6] = model_params.parameters[6];
+
 			viewer->removeAllShapes();
 			if(i==0)
 			{
 				viewer->addPointCloud<pcl::PointXYZ> (point_cloud, "sample cloud");
-				viewer->addCylinder(model_coefficients,"ground truth");
+				viewer->addSphere(model_coefficients,"ground truth");
 			}
 			else
 			{
   				viewer->updatePointCloud<pcl::PointXYZ> (point_cloud, "sample cloud");
-				viewer->addCylinder(model_coefficients,"ground truth");
+				viewer->addSphere(model_coefficients,"ground truth");
 			}
-    			viewer->spinOnce(100);*/
+    			viewer->spinOnce(100);
 			/* END VISUALIZE */
 		}
 
-		fs_orientation.close();
 		fs_radius.close();
 		fs_position.close();
 		fs_time.close();

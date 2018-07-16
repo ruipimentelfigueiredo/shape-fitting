@@ -11,27 +11,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#ifndef CYLINDERSEGMENTATIONRANSAC_H
-#define CYLINDERSEGMENTATIONRANSAC_H
-#include "cylinder_segmentation.h"
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/sample_consensus/sac_model_cylinder.h>
-#include <pcl/sample_consensus/ransac.h>
+#ifndef GAUSSIANMIXTUREMODEL_H
+#define GAUSSIANMIXTUREMODEL_H
+#include <Eigen/Geometry>
+#include <pcl/common/common.h>
+// DEFINE THE TYPES USED
+typedef pcl::PointXYZ PointT;
+typedef pcl::Normal NormalT;
+typedef pcl::PointCloud<PointT> PointCloudT;
+typedef pcl::PointCloud<NormalT> NormalCloudT;
 
-class CylinderSegmentationRansac : public CylinderSegmentation
+class GaussianMixtureModel
 {
-	// Parameters
-	float normal_distance_weight; 
-	unsigned int max_iterations; 
-	float distance_threshold;
-
-	pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
-
 	public:
-		CylinderSegmentationRansac(float normal_distance_weight_=0.1, unsigned int max_iterations_=1000, float distance_threshold_=0.1, float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false);
-		FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_);
+		GaussianMixtureModel(const std::vector<double> & weights_, const std::vector<Eigen::Matrix<double, 3 ,1> > & means_, const std::vector<Eigen::Matrix<double, 3 ,1> > & std_devs_) : weights(weights_),means(means_),std_devs(std_devs_)
+		{}
+	std::vector<double> weights;
+	std::vector<Eigen::Matrix<double, 3 ,1> > means;
+	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs;
 };
 
-#endif // CYLINDERSEGMENTATIONRANSAC_H
+#endif // GAUSSIANMIXTUREMODEL_H
