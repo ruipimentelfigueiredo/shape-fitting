@@ -12,9 +12,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
 
-#include "cylinder_segmentation_ransac.h"
-CylinderSegmentationRansac::CylinderSegmentationRansac(float normal_distance_weight_, unsigned int max_iterations_, float distance_threshold_, float min_radius_,float max_radius_, bool do_refine_) :
-	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
+#include "cylinder_fitting_ransac.h"
+CylinderFittingRansac::CylinderFittingRansac(float normal_distance_weight_, unsigned int max_iterations_, float distance_threshold_, float min_radius_,float max_radius_, bool do_refine_) :
+	CylinderFitting(min_radius_,max_radius_,do_refine_),
 	normal_distance_weight(normal_distance_weight_),
 	max_iterations(max_iterations_),
 	distance_threshold(distance_threshold_)
@@ -34,7 +34,7 @@ CylinderSegmentationRansac::CylinderSegmentationRansac(float normal_distance_wei
 	seg.setRadiusLimits (min_radius, max_radius);
 };
 
-FittingData CylinderSegmentationRansac::fit(const PointCloudT::ConstPtr & point_cloud_in_)
+FittingData CylinderFittingRansac::fit(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	// Compute normals
 	ne.setInputCloud (point_cloud_in_);

@@ -11,8 +11,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#ifndef CYLINDERSEGMENTATION_H
-#define CYLINDERSEGMENTATION_H
+#ifndef CylinderFitting_H
+#define CylinderFitting_H
 
 #include <pcl/common/transforms.h>
 #include <pcl/ModelCoefficients.h>
@@ -30,7 +30,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "gaussian_sphere.h"
 #include "fitting_data.h"
 
-class CylinderSegmentation
+class CylinderFitting
 {
 	protected:
 	// params
@@ -55,7 +55,7 @@ class CylinderSegmentation
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder);
 	public:
-		CylinderSegmentation(float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false) : 
+		CylinderFitting(float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false) : 
 			min_radius(min_radius_), 
 			max_radius(max_radius_), 
 			do_refine(do_refine_),
@@ -70,5 +70,5 @@ class CylinderSegmentation
 	virtual FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
 };
 
-#endif // CYLINDERSEGMENTATION_H
+#endif // CylinderFitting_H
 

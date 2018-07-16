@@ -11,16 +11,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#ifndef CYLINDERSEGMENTATIONRANSAC_H
-#define CYLINDERSEGMENTATIONRANSAC_H
-#include "cylinder_segmentation.h"
+#ifndef CYLINDERFITTINGRANSAC_H
+#define CYLINDERFITTINGRANSAC_H
+#include "cylinder_fitting.h"
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/sample_consensus/sac_model_cylinder.h>
 #include <pcl/sample_consensus/ransac.h>
 
-class CylinderSegmentationRansac : public CylinderSegmentation
+class CylinderFittingRansac : public CylinderFitting
 {
 	// Parameters
 	float normal_distance_weight; 
@@ -30,8 +30,8 @@ class CylinderSegmentationRansac : public CylinderSegmentation
 	pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
 
 	public:
-		CylinderSegmentationRansac(float normal_distance_weight_=0.1, unsigned int max_iterations_=1000, float distance_threshold_=0.1, float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false);
+		CylinderFittingRansac(float normal_distance_weight_=0.1, unsigned int max_iterations_=1000, float distance_threshold_=0.1, float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false);
 		FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_);
 };
 
-#endif // CYLINDERSEGMENTATIONRANSAC_H
+#endif // CYLINDERFITTINGRANSAC_H

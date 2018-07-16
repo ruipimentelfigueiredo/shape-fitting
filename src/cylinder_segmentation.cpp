@@ -12,8 +12,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
 
-#include "cylinder_segmentation.h"
-boost::shared_ptr<pcl::visualization::PCLVisualizer> CylinderSegmentation::simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder)
+#include "cylinder_fitting.h"
+boost::shared_ptr<pcl::visualization::PCLVisualizer> CylinderFitting::simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder)
 {
 	
   // --------------------------------------------
@@ -34,7 +34,7 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> CylinderSegmentation::simpl
 }
 
 
-Eigen::Matrix4f CylinderSegmentation::refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_)
+Eigen::Matrix4f CylinderFitting::refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_)
 {
 	pcl::IterativeClosestPoint<PointT, PointT> icp;
 

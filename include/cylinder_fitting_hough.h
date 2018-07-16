@@ -12,11 +12,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
 
-#ifndef CYLINDERSEGMENTATIONHOUGH_H
-#define CYLINDERSEGMENTATIONHOUGH_H
-#include "cylinder_segmentation.h"
+#ifndef CYLINDERFITTINGHOUGH_H
+#define CYLINDERFITTINGHOUGH_H
+#include "cylinder_fitting.h"
 
-class CylinderSegmentationHough : public CylinderSegmentation
+class CylinderFittingHough : public CylinderFitting
 {
 	private:
 	std::vector<double> cos_angle;
@@ -52,11 +52,11 @@ class CylinderSegmentationHough : public CylinderSegmentation
 	Eigen::Matrix<double,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
 
 	public:
-		CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false, bool soft_voting_=true);
+		CylinderFittingHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false, bool soft_voting_=true);
 
 		FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_);
 
 
 };
 
-#endif // CYLINDERSEGMENTATIONHOUGH_H
+#endif // CYLINDERFITTINGHOUGH_H

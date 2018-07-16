@@ -12,12 +12,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
 
-#include "cylinder_segmentation_hough.h"
+#include "cylinder_fitting_hough.h"
 
 int GaussianSphere::iteration;
 
-CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_, unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_, bool soft_voting_) : 
-	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
+CylinderFittingHough::CylinderFittingHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_, unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_, bool soft_voting_) : 
+	CylinderFitting(min_radius_,max_radius_,do_refine_),
 	gaussian_sphere(gaussian_sphere_),
 	angle_bins(angle_bins_),
 	angle_step(2*M_PI/angle_bins),
@@ -58,7 +58,7 @@ CylinderSegmentationHough::CylinderSegmentationHough(const GaussianSphere & gaus
 
 
 
-Eigen::Vector3d CylinderSegmentationHough::findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_)
+Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	// Setup the principal curvatures computation
 	pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> principal_curvatures_estimation;
@@ -198,7 +198,7 @@ Eigen::Vector3d CylinderSegmentationHough::findCylinderDirection(const NormalClo
 	return gaussian_sphere_voting[best_direction_index];
 }
 
-Eigen::Matrix<double,5,1> CylinderSegmentationHough::findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_)
+Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	// Get position voting boundaries
 	Eigen::Vector4f min_pt,max_pt;
@@ -271,7 +271,7 @@ Eigen::Matrix<double,5,1> CylinderSegmentationHough::findCylinderPositionRadius(
 
 }
 
-FittingData CylinderSegmentationHough::fit(const PointCloudT::ConstPtr & point_cloud_in_)
+FittingData CylinderFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	//1.  Estimate point normals
 	ne.setInputCloud (point_cloud_in_);
