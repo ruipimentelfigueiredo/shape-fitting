@@ -33,8 +33,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 class SphereFittingHough
 {
+
+
         public:
-	// private attributes
 
 	// Direction HT
 	GaussianSphere gaussian_sphere;
@@ -47,11 +48,17 @@ class SphereFittingHough
 	double min_radius,max_radius;
 	double r_step;
 	double accumulator_peak_threshold;
-	std::vector<std::vector<std::vector<std::vector<unsigned int> > > > sphere_accum;
-	unsigned int mode;
+	std::vector<std::vector<std::vector<std::vector<double> > > > sphere_accum;
+	bool soft_voting;
 
+	// Normal estimation
+	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals;// (new pcl::PointCloud<pcl::Normal>);
+	pcl::NormalEstimation<PointT, pcl::Normal> ne;
+	pcl::search::KdTree<PointT>::Ptr tree;
+
+	std::vector<double> radii;
 	public:
-		SphereFittingHough(const GaussianSphere & gaussian_sphere_, unsigned int position_bins_=30,unsigned int radius_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, bool do_refine_=false);
+		SphereFittingHough(const GaussianSphere & gaussian_sphere_, unsigned int position_bins_=30,unsigned int radius_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, bool do_refine_=false, bool soft_voting_=false);
 
 		FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_);
 };

@@ -123,7 +123,10 @@ error_sup=hough_position_results_mean_0[outlier_index,occlusion_index,:]+hough_p
 error_inf=hough_position_results_mean_0[outlier_index,occlusion_index,:]-hough_position_results_std_0[outlier_index,occlusion_index,:];
 plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
-
+plt.plot(error_levels,hough_position_results_mean_1[outlier_index,occlusion_index,:],color=colors[0],label=labels[1],linestyle=linestyles[0])
+error_sup=hough_position_results_mean_1[outlier_index,occlusion_index,:]+hough_position_results_std_1[outlier_index,occlusion_index,:];
+error_inf=hough_position_results_mean_1[outlier_index,occlusion_index,:]-hough_position_results_std_1[outlier_index,occlusion_index,:];
+plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
 manager = plt.get_current_fig_manager()
 manager.resize(*manager.window.maxsize())
@@ -142,7 +145,10 @@ error_sup=hough_radius_results_mean_0[outlier_index,occlusion_index,:]+hough_rad
 error_inf=hough_radius_results_mean_0[outlier_index,occlusion_index,:]-hough_radius_results_std_0[outlier_index,occlusion_index,:];
 plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
-
+plt.plot(error_levels,hough_radius_results_mean_1[outlier_index,occlusion_index,:],color=colors[0],label=labels[1],linestyle=linestyles[0])
+error_sup=hough_radius_results_mean_1[outlier_index,occlusion_index,:]+hough_radius_results_std_1[outlier_index,occlusion_index,:];
+error_inf=hough_radius_results_mean_1[outlier_index,occlusion_index,:]-hough_radius_results_std_1[outlier_index,occlusion_index,:];
+plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
 manager = plt.get_current_fig_manager()
 manager.resize(*manager.window.maxsize())
@@ -163,7 +169,10 @@ error_sup=hough_position_results_mean_0[:,occlusion_index,noise_index]+hough_pos
 error_inf=hough_position_results_mean_0[:,occlusion_index,noise_index]-hough_position_results_std_0[:,occlusion_index,noise_index];
 plt.fill_between(outlier_levels_,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
-
+plt.plot(error_levels,hough_radius_results_mean_1[:,occlusion_index,noise_index],color=colors[0],label=labels[1],linestyle=linestyles[0])
+error_sup=hough_radius_results_mean_1[:,occlusion_index,noise_index]+hough_radius_results_std_1[:,occlusion_index,noise_index];
+error_inf=hough_radius_results_mean_1[:,occlusion_index,noise_index]-hough_radius_results_std_1[:,occlusion_index,noise_index];
+plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[0])
 
 manager = plt.get_current_fig_manager()
 manager.resize(*manager.window.maxsize())
