@@ -14,9 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include "cylinder_fitting_hough.h"
 
-int GaussianSphere::iteration;
-
-CylinderFittingHough::CylinderFittingHough(const GaussianSphere & gaussian_sphere_, unsigned int angle_bins_, unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_, bool soft_voting_) : 
+CylinderFittingHough::CylinderFittingHough(const OrientationAccumulatorSpace & gaussian_sphere_, unsigned int angle_bins_, unsigned int radius_bins_, unsigned int position_bins_, double min_radius_, double max_radius_, double accumulator_peak_threshold_, unsigned int mode_, bool do_refine_, bool soft_voting_) : 
 	CylinderFitting(min_radius_,max_radius_,do_refine_),
 	gaussian_sphere(gaussian_sphere_),
 	angle_bins(angle_bins_),
@@ -51,7 +49,7 @@ CylinderFittingHough::CylinderFittingHough(const GaussianSphere & gaussian_spher
 		sin_angle[w]=sin(current_angle);// TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
 	}
   	//ne.setRadiusSearch (0.03);
-	ne.setKSearch (50);
+	ne.setKSearch (10);
 	ne.setSearchMethod (tree);
 };
 
@@ -60,6 +58,13 @@ CylinderFittingHough::CylinderFittingHough(const GaussianSphere & gaussian_spher
 
 Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_)
 {
+  	/*boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
+    	viewer = normalsVis(point_cloud_in_, cloud_normals);
+	while (!viewer->wasStopped ())
+	{
+		viewer->spinOnce (100);
+		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+	}*/
 	// Setup the principal curvatures computation
 	pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> principal_curvatures_estimation;
 
@@ -71,7 +76,8 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 
 	// Use the same KdTree from the normal estimation
 	principal_curvatures_estimation.setSearchMethod (tree);
-	principal_curvatures_estimation.setKSearch (50);
+	//principal_curvatures_estimation.setRadiusSearch (0.03);
+	principal_curvatures_estimation.setKSearch (10);
 
 	// Actually compute the principal curvatures
 	pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr principal_curvatures (new pcl::PointCloud<pcl::PrincipalCurvatures> ());
@@ -82,12 +88,14 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 
 	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
 
-	const std::vector<Eigen::Vector3d> & gaussian_sphere_voting=gaussian_sphere.getGaussianSphere();
+	const std::vector<Eigen::Vector3d> & gaussian_sphere_voting=gaussian_sphere.getOrientationAccumulatorSpace();
 
         if(soft_voting)
 	{
+
 		for(unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 		{
+
 			Eigen::Vector3d voting_direction=gaussian_sphere_voting[i];
 			for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 			{
@@ -109,7 +117,7 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
 					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
 
-					cyl_direction_accum[i]+=normal_weight*curvature_weight;//*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
+					cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
 				}
 			}
 
@@ -146,7 +154,7 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
 
 					//cyl_direction_accum[i]+=normal_weight*curvature_weight;//*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
-					best_direction_score_temp=normal_weight*curvature_weight;
+					best_direction_score_temp=normal_weight*curvature_weight*principal_curvatures->points[s].pc1;
 				}
 
 				if(best_direction_score_temp>best_direction_score)
@@ -187,14 +195,8 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 	}
 
 
-
 	// HERE WE SHOULD CLUSTER
 
-	//ROS_DEBUG_STREAM("  3.4. Convert back to continuous");
-
-	////ROS_DEBUG_STREAM("    best votes="<< most_votes<<" best_direction_index="<<best_direction_index);
-
-	//ROS_DEBUG_STREAM("  3.5. Convert to direction vector");
 	return gaussian_sphere_voting[best_direction_index];
 }
 
@@ -203,7 +205,7 @@ Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const
 	// Get position voting boundaries
 	Eigen::Vector4f min_pt,max_pt;
 	pcl::getMinMax3D(*point_cloud_in_,min_pt,max_pt);
-	////ROS_DEBUG_STREAM(" min="<< min_pt <<" max="<<max_pt);
+
 	double u_position_step=(double)(max_pt-min_pt)[0]/position_bins;
 	double v_position_step=(double)(max_pt-min_pt)[1]/position_bins;
 	double u_position_step_inv=(double)1.0/u_position_step;
@@ -215,7 +217,7 @@ Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const
 			std::fill(cyl_circ_accum[u_index][v_index].begin(),cyl_circ_accum[u_index][v_index].end(), 0);
 		}
 	}
-	
+
  	// Vote
 	for(unsigned int r=0; r<radius_bins;++r)
 	{	
@@ -331,6 +333,7 @@ FittingData CylinderFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_
 	pcl::transformPointCloud (*transformed_cloud, *transformed_cloud, R2);
 
 	Eigen::Matrix<double,5,1> position_and_radius=findCylinderPositionRadius(transformed_cloud);
+
 	double radius=position_and_radius[3];
 	double height=position_and_radius[4];
 	// Convert back to original coordinates
@@ -377,7 +380,7 @@ FittingData CylinderFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_
 	final_coeffs << coeffs,
 			height;
 
-	FittingData cylinder_fitting(final_coeffs,inlier_ratio_);
+	FittingData cylinder_fitting(final_coeffs,inlier_ratio_,FittingData::CYLINDER,cloud_projected);
 
 	return cylinder_fitting;
 }

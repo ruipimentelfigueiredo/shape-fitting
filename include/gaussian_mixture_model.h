@@ -15,11 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #define GAUSSIANMIXTUREMODEL_H
 #include <Eigen/Geometry>
 #include <pcl/common/common.h>
-// DEFINE THE TYPES USED
-typedef pcl::PointXYZ PointT;
-typedef pcl::Normal NormalT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef pcl::PointCloud<NormalT> NormalCloudT;
+
 
 class GaussianMixtureModel
 {

@@ -11,8 +11,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#ifndef CylinderFitting_H
-#define CylinderFitting_H
+#ifndef SPHEREFITTING_H
+#define SPHEREFITTING_H
 #include <random>
 #include <pcl/common/transforms.h>
 #include <pcl/ModelCoefficients.h>
@@ -31,7 +31,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "spherical_grid.h"
 #include "fitting_data.h"
 
-class CylinderFitting
+class SphereFitting
 {
 	protected:
 	// params
@@ -41,22 +41,22 @@ class CylinderFitting
 	// refine estimation
 	bool do_refine;
 
+	//aux structures
 	// Normal estimation
-	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals;
+	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals;// (new pcl::PointCloud<pcl::Normal>);
 	pcl::NormalEstimation<PointT, pcl::Normal> ne;
 	pcl::search::KdTree<PointT>::Ptr tree; 
 
-	PointCloudT::Ptr cloud_filtered;
-	PointCloudT::Ptr transformed_cloud;
-	pcl::PointIndices::Ptr inliers_cylinder;
+	PointCloudT::Ptr cloud_filtered;// (new pcl::PointCloud<PointT>);
+	PointCloudT::Ptr transformed_cloud;// (new pcl::PointCloud<PointT> ());
+	pcl::PointIndices::Ptr inliers_cylinder;// (new pcl::PointIndices);
 
 	pcl::PassThrough<PointT> pass;
 
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder);
-
 	public:
-		CylinderFitting(float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false) : 
+		SphereFitting(float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false) : 
 			min_radius(min_radius_), 
 			max_radius(max_radius_), 
 			do_refine(do_refine_),
@@ -71,5 +71,5 @@ class CylinderFitting
 	virtual FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
 };
 
-#endif // CylinderFitting_H
+#endif // SPHEREFITTING_H
 

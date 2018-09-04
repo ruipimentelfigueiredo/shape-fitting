@@ -11,42 +11,38 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#ifndef GAUSSIANSPHERE_H
-#define GAUSSIANSPHERE_H
+#ifndef SPHERICALGRID_H
+#define SPHERICALGRID_H
 #include "orientation_accumulator_space.h"
-#include "gaussian_mixture_model.h"
-#include <random>
-class GaussianSphere : public OrientationAccumulatorSpace
+class SphericalGrid : public OrientationAccumulatorSpace
 {
 	public:
-		GaussianSphere(const GaussianMixtureModel & gmm_,const unsigned int & gaussian_sphere_points_num_=900, const unsigned int & orientation_accumulators_num_=10) :
-			OrientationAccumulatorSpace(gaussian_sphere_points_num_,orientation_accumulators_num_),
-			gmm(gmm_)
+		SphericalGrid(const unsigned int & gaussian_sphere_points_num_=900, const unsigned int & orientation_accumulators_num_=10):
+			OrientationAccumulatorSpace(gaussian_sphere_points_num_,orientation_accumulators_num_)
 		{
-			std::random_device rd{};
-			std::mt19937 gen{rd()};
-
-			iteration=0;
-			// Create randomized structure
-			// By randomly sampling a unitary sphere from a 3D, zero mean Gaussian distribution
+			double theta_bins=sqrt(gaussian_sphere_points_num_);
+			double phi_bins=sqrt(gaussian_sphere_points_num_);
 			std::cout << "Creating gaussian spheres" << std::endl;
 			for(unsigned int o=0;o<orientation_accumulators_num;++o)
 			{
 				std::cout << "  Creating gaussian sphere number " << o << std::endl;
 				std::vector<Eigen::Vector3d> gaussian_sphere_points_;
-				for(unsigned int g=0;g<gmm.weights.size();++g)
+				for(unsigned int theta_index=0; theta_index<theta_bins; ++theta_index)
 				{
+					double theta_step=(double)theta_index/theta_bins;
+					double theta = 2 * M_PI * theta_step;
+					for(unsigned int phi_index=0; phi_index<phi_bins; ++phi_index)
+					{		
+						double phi_step=(double)phi_index/phi_bins;
 
-					for(unsigned int i=0;i<gaussian_sphere_points_num*gmm.weights[g];++i)
-					{
-		                		std::normal_distribution<> d1{gmm.means[g][0],gmm.std_devs[g][0]};
-		                		std::normal_distribution<> d2{gmm.means[g][1],gmm.std_devs[g][1]};
-		                		std::normal_distribution<> d3{gmm.means[g][2],gmm.std_devs[g][2]};
-						// Generate random patch on the sphere surface
-						Eigen::Vector3d random_point(d1(gen),d2(gen),fabs(d3(gen)));
+						double phi = M_PI * phi_step;
+						double x = sin(phi) * cos(theta);
+						double y = sin(phi) * sin(theta);
+						double z = cos(phi);
 
-						random_point.normalize();
-						gaussian_sphere_points_.push_back(random_point);
+						Eigen::Vector3d point(x,y,fabs(z));
+						point.normalize();
+						gaussian_sphere_points_.push_back(point);
 					}
 				}
 
@@ -56,20 +52,10 @@ class GaussianSphere : public OrientationAccumulatorSpace
 			}
 			std::cout << "Done" << std::endl;
 		};
-		~GaussianSphere() {};
 
-	
-	const std::vector<Eigen::Vector3d> & getOrientationAccumulatorSpace()
-	{
-		++iteration;
-		//std::cout << iteration%orientation_accumulators_num<< std::endl;
-		return accumulator_space[iteration%orientation_accumulators_num];
-	}
-
-	static int iteration;
-	GaussianMixtureModel gmm;
-
+		const std::vector<Eigen::Vector3d> & getOrientationAccumulatorSpace()
+		{
+			return accumulator_space[0];
+		}
 };
-
-#endif // GAUSSIANSPHERE_H
-
+#endif // SPHERICALGRID_H

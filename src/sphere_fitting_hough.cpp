@@ -14,14 +14,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include "sphere_fitting_hough.h"
 
-int GaussianSphere::iteration;
-
-SphereFittingHough::SphereFittingHough(const GaussianSphere & gaussian_sphere_, unsigned int position_bins_, unsigned int radius_bins_,double min_radius_,double max_radius_, double accumulator_peak_threshold_, bool do_refine_, bool soft_voting_) : 
-	gaussian_sphere(gaussian_sphere_),
+SphereFittingHough::SphereFittingHough(const OrientationAccumulatorSpace & gaussian_sphere_, unsigned int position_bins_, unsigned int radius_bins_,double min_radius_,double max_radius_, double accumulator_peak_threshold_, bool do_refine_, bool soft_voting_) : 
+	SphereFitting(min_radius_,max_radius_),
+	gaussian_sphere(new OrientationAccumulatorSpace(gaussian_sphere_)),
 	radius_bins(radius_bins_),
 	position_bins(position_bins_),
-        min_radius(min_radius_),
-        max_radius(max_radius_),
 	r_step((max_radius_-min_radius_)/radius_bins),
 	accumulator_peak_threshold(accumulator_peak_threshold_),
 	soft_voting(soft_voting_),
@@ -63,7 +60,7 @@ FittingData SphereFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in
 		}
 	}
 
-	const std::vector<Eigen::Vector3d> & gaussian_sphere_voting=gaussian_sphere.getGaussianSphere();
+	const std::vector<Eigen::Vector3d> & gaussian_sphere_voting=gaussian_sphere->getOrientationAccumulatorSpace();
 
 	// Get position voting boundaries
 	Eigen::Vector4f min_pt,max_pt;
@@ -91,7 +88,7 @@ FittingData SphereFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in
 				cloud_normals->points[s].getNormalVector3fMap ()=-cloud_normals->points[s].getNormalVector3fMap ();
 			}
 		}
-		for(unsigned int i=0; i<gaussian_sphere.gaussian_sphere_points_num; ++i)
+		for(unsigned int i=0; i<gaussian_sphere->gaussian_sphere_points_num; ++i)
 		{
 			double theta=atan2(gaussian_sphere_voting[i][1],gaussian_sphere_voting[i][0]);
 			double phi=acos(gaussian_sphere_voting[i][2]);
@@ -123,7 +120,7 @@ FittingData SphereFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in
 	}
 	else
 	{
-		for(unsigned int i=0; i<gaussian_sphere.gaussian_sphere_points_num; ++i)
+		for(unsigned int i=0; i<gaussian_sphere->gaussian_sphere_points_num; ++i)
 		{
 			double theta=atan2(gaussian_sphere_voting[i][1],gaussian_sphere_voting[i][0]);
 			double phi=acos(gaussian_sphere_voting[i][2]);
@@ -184,6 +181,14 @@ FittingData SphereFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in
 	Eigen::VectorXf coeffs(4,1);
 	coeffs <<  best_x, best_y, best_z, best_r;
 
-	return FittingData(coeffs,1.0);
+	// Create the filtering object
+	PointCloudT::Ptr cloud_projected(new PointCloudT);
+	pcl::SampleConsensusModelSphere<PointT>::Ptr dit (new pcl::SampleConsensusModelSphere<PointT> (point_cloud_in_)); 
+
+	std::vector<int> inliers; 
+	dit -> selectWithinDistance (coeffs, 0.01, inliers); 
+	pcl::copyPointCloud<PointT>(*point_cloud_in_, inliers, *cloud_projected); 
+	double inlier_ratio_=((double)cloud_projected->size()/(double)point_cloud_in_->size());
+	return FittingData(coeffs,inlier_ratio_,FittingData::SPHERE,cloud_projected);
 };
 

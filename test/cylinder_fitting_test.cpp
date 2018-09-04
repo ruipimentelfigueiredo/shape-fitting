@@ -12,7 +12,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
 
-#include "cylinder_fitting_hough.h"
 #include <ctime>
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
@@ -22,53 +21,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <chrono>
 using namespace std;
 using namespace std::chrono;
-#include <pcl/visualization/cloud_viewer.h>
-
- ////////////////////////////////////////////////////////////////////////////////////////////
-
-/*namespace pcl
-{
-
-  namespace visualization
-  {
-    class PCL_EXPORTS PCLVisualizerCylinder : PCLVisualizer
-    {
-	public: 
-	bool updateCylinder(const pcl::ModelCoefficients & coefficients, const std::string & id = "cylinder", int viewport = 0)	
-	{
-		// Check to see if this ID entry already exists (has it been already added to the visualizer?)
-		ShapeActorMap::iterator am_it = shape_actor_map_->find (id);
-		if (am_it != shape_actor_map_->end ())
-		{
-			pcl::console::print_warn (stderr, "[addCylinder] A shape with id <%s> already exists! Please choose a different id and retry.\n", id.c_str ());
-			return (false);
-		}
-
-		if (coefficients.values.size () != 7)
-		{
-			PCL_WARN ("[addCylinder] Coefficients size does not match expected size (expected 7).\n");
-			return (false);
-		}
-
-		vtkSmartPointer<vtkDataSet> data = createCylinder (coefficients);
-
-
-		//////////////////////////////////////////////////////////////////////////
-		// Get the actor pointer
-		vtkLODActor* actor = vtkLODActor::SafeDownCast (am_it->second);
-		vtkAlgorithm *algo = actor->GetMapper ()->GetInput ()->GetProducerPort ()->GetProducer ();
-		vtkCylinderSource *src = vtkCylinderSource::SafeDownCast (algo);
-
-		src->SetHeight (coefficients[6]);
-		src->SetRadius (coefficients[5]);
-		src->Update ();
-		//actor->GetProperty ()->SetColor (r, g, b);
-		actor->Modified ();
-
-		return (true);
-	}
-};*/
-
 
 int main (int argc, char** argv)
 {
@@ -124,6 +76,8 @@ int main (int argc, char** argv)
 	bool do_refine=atoi(argv[13]);
 	std::cout << "do_refine: " << do_refine << std::endl;
 
+	// Voting Sphere Uniform Grid
+	SphericalGrid spherical_grid(gaussian_sphere_points_num,orientation_accumulators_num);
 
 	// Gaussian Sphere Uniform
 	std::vector<double> weights;
@@ -145,13 +99,13 @@ int main (int argc, char** argv)
 	weights_biased.push_back(1.0);
 	Eigen::Matrix<double, 3 ,1> mean_eigen_biased(0,0,1.0);
 	means_biased.push_back(mean_eigen_biased);
-	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.1,0.1,0.1);
+	Eigen::Matrix<double, 3 ,1> std_dev_eigen_biased(0.5,0.5,0.5);
 	std_devs_biased.push_back(std_dev_eigen_biased);
 
 	GaussianMixtureModel gmm_biased(weights_biased, means_biased, std_devs_biased);
 	GaussianSphere gaussian_sphere_biased(gmm_biased,gaussian_sphere_points_num,orientation_accumulators_num);
 
-	// Gaussian Sphere Super Top Biased
+	// Gaussian Sphere Strong Top Biased
 	std::vector<double> weights_super_biased;
 	std::vector<Eigen::Matrix<double, 3 ,1> > means_super_biased;
 	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs_super_biased;
@@ -179,6 +133,13 @@ int main (int argc, char** argv)
 
 
 	std::vector<boost::shared_ptr<CylinderFitting> > cylinder_segmentators;
+
+	// HOUGH RABANI
+	cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHough> (new CylinderFittingHough(spherical_grid,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderFittingHough::NORMAL, false, false)));
+
+	// HOUGH RABANI (soft-voting)
+	cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHough> (new CylinderFittingHough(spherical_grid,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderFittingHough::NORMAL, false, true)));
+
 
 	// HOUGH NORMAL
 	cylinder_segmentators.push_back(boost::shared_ptr<CylinderFittingHough> (new CylinderFittingHough(gaussian_sphere,(unsigned int)angle_bins,(unsigned int)radius_bins,(unsigned int)position_bins,(float)min_radius, (float)max_radius,(float)accumulator_peak_threshold,CylinderFittingHough::NORMAL, false, false)));
@@ -226,7 +187,7 @@ int main (int argc, char** argv)
 	
 	// Get point clouds
 	PointClouds point_clouds(point_clouds_dir);
-	std::cout << "Number of point_clouds:" << point_clouds.point_clouds.size() << std::endl;
+	std::cout << "Number of point_clouds:" << point_clouds.file_names.size() << std::endl;
 
 	std::string detections_frame_id="world";
 	std::string marker_detections_namespace_="detections";
@@ -236,12 +197,8 @@ int main (int argc, char** argv)
 
 	createDirectory(output_dir);
 
-	/*boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-	viewer->setBackgroundColor (0, 0, 0);
-	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
-        viewer->addCoordinateSystem (1.0);
-        viewer->initCameraParameters ();*/
-	for (unsigned int d=4;d < 6;++d)
+
+	for (unsigned int d=0;d < cylinder_segmentators.size();++d)
 	{
 		std::fstream fs_orientation;
 		std::fstream fs_radius;
@@ -253,23 +210,21 @@ int main (int argc, char** argv)
 		fs_position.open (output_dir+"position_noise_"       + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 		fs_time.open (output_dir+"time_noise_"               + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
 
-		for(unsigned int i=0;i<point_clouds.point_clouds.size();++i)
+		for(unsigned int i=0;i<point_clouds.file_names.size();++i)
 		{	
+			
 			// Ground truth iterations
 			unsigned int iteration=i % ground_truths.ground_truth.size();
 
 			Cylinder ground_truth=ground_truths.ground_truth[iteration];
 
 			pcl::PointCloud<PointT>::Ptr point_cloud(new pcl::PointCloud<PointT>());
-			*point_cloud=*point_clouds.point_clouds[i];
+			point_cloud=point_clouds.loadPointCloud(point_clouds_dir+point_clouds.file_names[i]);
 
 			/* FIT */
     			high_resolution_clock::time_point t1 = high_resolution_clock::now();
-			FittingData model_params=cylinder_segmentators[d]->fit(point_clouds.point_clouds[i]);
+			FittingData model_params=cylinder_segmentators[d]->fit(point_cloud);
     			high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
-			fs_time << duration << " " << "\n";
-			std::cout << "iteration " << i << " of " << point_clouds.point_clouds.size() << " total time: " << duration << " ms"<<  std::endl;
 			/* END FIT */
 
 			/* STORE RESULTS */
@@ -283,31 +238,16 @@ int main (int argc, char** argv)
 
 			float position_error=(model_params.parameters.head(2)-Eigen::Vector2f(ground_truth.position[0], ground_truth.position[1])).norm();
 			fs_position << position_error << " " << "\n";
+
+    			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
+			fs_time << duration << " " << "\n";
 			/* END STORE RESULTS */
 
 			/* VISUALIZE */
-			/*pcl::ModelCoefficients model_coefficients;
-			model_coefficients.values.resize (7);
-			model_coefficients.values[0] = model_params.parameters[0];
-			model_coefficients.values[1] = model_params.parameters[1];
-			model_coefficients.values[2] = model_params.parameters[2];
-			model_coefficients.values[3] = model_params.parameters[3];
-			model_coefficients.values[4] = model_params.parameters[4];
-			model_coefficients.values[5] = model_params.parameters[5];
-			model_coefficients.values[6] = model_params.parameters[6];
-			viewer->removeAllShapes();
-			if(i==0)
-			{
-				viewer->addPointCloud<pcl::PointXYZ> (point_cloud, "sample cloud");
-				viewer->addCylinder(model_coefficients,"ground truth");
-			}
-			else
-			{
-  				viewer->updatePointCloud<pcl::PointXYZ> (point_cloud, "sample cloud");
-				viewer->addCylinder(model_coefficients,"ground truth");
-			}
-    			viewer->spinOnce(100);*/
+			//model_params.visualize(point_cloud);
 			/* END VISUALIZE */
+
+			std::cout << "iteration " << i << " of " << point_clouds.file_names.size() << " total time: " << duration << " ms"<<  std::endl;
 		}
 
 		fs_orientation.close();

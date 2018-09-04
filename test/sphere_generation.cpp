@@ -108,16 +108,8 @@ int main (int argc, char** argv)
 		ss_.ignore();
 	}
 
-	std::vector<pcl::PointCloud<pcl::PointXYZ> > point_clouds;
-	std::vector<Eigen::Matrix4d> transfs;
-
-
-	// First, generate 200 point clouds with different radius, heights at random poses
-	/*boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-	viewer->setBackgroundColor (0, 0, 0);
-	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
-        viewer->addCoordinateSystem (1.0);
-        viewer->initCameraParameters ();*/
+	unsigned int total_iterations=iterations*outlier_levels.size()*occlusion_levels.size()*radii.size();
+	// generate point clouds with different radius, heights at random poses
 	for(unsigned int i=0; i<iterations; ++i)
 	{
 		for(unsigned int o=0; o<outlier_levels.size();++o)
@@ -146,7 +138,6 @@ int main (int argc, char** argv)
 						}
 					}
 					
-					point_clouds.push_back(cloud);
 
 					Eigen::Matrix3d rot;
 					rot=Eigen::AngleAxisd(0.0,Eigen::Vector3d::UnitZ());
@@ -154,41 +145,26 @@ int main (int argc, char** argv)
 					Eigen::Vector3d sphere_pos(0,0,0);
 					Eigen::Matrix4d transf;
 					transf.block(0,0,3,3)=rot;
-					//transf.block(0,4,3,1)=sphere_pos;
-					transfs.push_back(transf);
+
+					//Transform point cloud
+					pcl::transformPointCloud (cloud, cloud,transf);
 
 					unsigned int index=r_+occ*radii.size()+o*radii.size()*occlusion_levels.size()+i*radii.size()*occlusion_levels.size()*outlier_levels.size();
-					std::cout << index << std::endl;
+
+					std::cout << index << " of " << total_iterations << std::endl;
+
 					std::stringstream ss;
 					ss << ground_truth_dir << "ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
 				
 					std::string ground_truth_file=ss.str();
 					Sphere ground_truth(radius, sphere_pos, ground_truth_file);
-					Sphere test(ground_truth_file);
+					//Sphere test(ground_truth_file);
 
-
-
-				}
-			}
-		}
-	}
-
-	for(unsigned int i=0; i<iterations; ++i)
-	{
-		for(unsigned int o=0; o<outlier_levels.size();++o)
-		{
-			for(unsigned int occ=0; occ<occlusion_levels.size();++occ)
-			{	
-				for(unsigned int r_=0; r_<radii.size();++r_)
-				{
 					// Then corrupt with diferent levels of noise
 					for(unsigned int n=0; n<noise_levels.size(); ++n)
 					{
+						pcl::PointCloud<pcl::PointXYZ> noisy_cloud(cloud);
 
-						unsigned int index=r_+occ*radii.size()+o*radii.size()*occlusion_levels.size()+i*radii.size()*occlusion_levels.size()*outlier_levels.size();
-
-						pcl::PointCloud<pcl::PointXYZ> noisy_cloud;
-						noisy_cloud=point_clouds[index];
 						std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
 						for(unsigned int p=0; p<noisy_cloud.size();++p)
 						{
@@ -199,33 +175,10 @@ int main (int argc, char** argv)
 						    noisy_cloud.points[p].z+=d(gen);
 						}
 
-						//Transform point cloud
-						pcl::PointCloud<pcl::PointXYZ> cloud_transf;
-						// transfs[index]
-						Eigen::Matrix4f transf=Eigen::Matrix4f::Identity();
-						pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
 						std::stringstream ss;
 						ss << point_clouds_dir << "cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
-						pcl::io::savePCDFile(ss.str(), cloud_transf); // Binary format
+						pcl::io::savePCDFile(ss.str(), noisy_cloud); // Binary format
 
-						/*pcl::ModelCoefficients model_coefficients;
-						model_coefficients.values.resize (4);
-						model_coefficients.values[0] = 0;
-						model_coefficients.values[1] = 0;
-						model_coefficients.values[2] = 0;
-						model_coefficients.values[3] = fabs(radii[r_]);
-						viewer->removeAllShapes();
-						if(index==0)
-						{
-							viewer->addPointCloud<pcl::PointXYZ> (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(noisy_cloud), "sample cloud");
-							viewer->addSphere(model_coefficients,"ground truth");
-						}
-						else
-						{
-			  				viewer->updatePointCloud<pcl::PointXYZ> (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(noisy_cloud), "sample cloud");
-							viewer->addCylinder(model_coefficients,"ground truth");
-						}
-			    			viewer->spinOnce(100);*/
 					}
 				}
 			}

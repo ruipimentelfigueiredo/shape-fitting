@@ -97,9 +97,6 @@ FittingData CylinderFittingRansac::fit(const PointCloudT::ConstPtr & point_cloud
 
 	Eigen::VectorXf coeffs(7,1);
 	coeffs << 
-		//cylinder_position[0]+0.5*height*cylinder_direction[0],
-		//cylinder_position[1]+0.5*height*cylinder_direction[1],
-		//cylinder_position[2]+0.5*height*cylinder_direction[2],
 		cylinder_position[0],
 		cylinder_position[1],
 		cylinder_position[2],
@@ -108,9 +105,6 @@ FittingData CylinderFittingRansac::fit(const PointCloudT::ConstPtr & point_cloud
 		cylinder_direction[2],
 		coefficients_cylinder->values[6];
 		//height;
-
-
-
 
 	// Create the filtering object
 	PointCloudT::Ptr cloud_projected(new PointCloudT);
@@ -126,45 +120,12 @@ FittingData CylinderFittingRansac::fit(const PointCloudT::ConstPtr & point_cloud
 	// Refine height
 
 	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-	//height=max_pt[2]-min_pt[2];
-
-	// Redefine cylinder position (base);
-	//Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
-    	//coefficients_cylinder->values[0]=refined_cylinder_position[0];
-    	//coefficients_cylinder->values[1]=refined_cylinder_position[1];
-    	//coefficients_cylinder->values[2]=refined_cylinder_position[2];
-
-	//std::cout << "height:" << height << std::endl;
-	// VISUALIZE
-
-    	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
-
-   
-	while (!viewer->wasStopped ())
-	{
-		viewer->spinOnce (100);
-		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-	}//*/
-
-	//Eigen::VectorXf coeffs(8,1);
-
-
-
-	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
-
-
-	while (!viewer->wasStopped ())
-	{
-		viewer->spinOnce (100);
-		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-	}//*/
-
 
 	Eigen::VectorXf final_coeffs(8,1);
 	final_coeffs << coeffs,
 			height;
 
-	FittingData cylinder_fitting(final_coeffs,inlier_ratio_);
+	FittingData cylinder_fitting(final_coeffs,inlier_ratio_,FittingData::CYLINDER,cloud_projected);
 
 	return cylinder_fitting;
 }

@@ -11,39 +11,30 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
+#ifndef PLANEFITTINGRANSAC_H
+#define PLANEFITTINGRANSAC_H
+#include "plane_fitting.h"
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac_model_plane.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/passthrough.h>
 
-#ifndef SPHEREFITTINGHOUGH_H
-#define SPHEREFITTINGHOUGH_H
-
-#include "sphere_fitting.h"
-
-class SphereFittingHough : SphereFitting
+class PlaneFittingRansac : PlaneFitting
 {
-        public:
+	double table_z_filter_min; 
+	double table_z_filter_max;
+	double z_filter_min;
+	double z_filter_max;
+	double plane_detection_voxel_size;
+	double clustering_voxel_size;
+	int inlier_threshold;
 
-	// Direction HT
-	boost::shared_ptr<OrientationAccumulatorSpace> gaussian_sphere;
-
-	unsigned int angle_bins;
-
-	double angle_step;
-	unsigned int radius_bins;
-	unsigned int position_bins;
-	double r_step;
-	double accumulator_peak_threshold;
-	std::vector<std::vector<std::vector<std::vector<double> > > > sphere_accum;
-	bool soft_voting;
-
-	// Normal estimation
-	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals;// (new pcl::PointCloud<pcl::Normal>);
-	pcl::NormalEstimation<PointT, pcl::Normal> ne;
-	pcl::search::KdTree<PointT>::Ptr tree;
-
-	std::vector<double> radii;
 	public:
-		SphereFittingHough(const OrientationAccumulatorSpace & gaussian_sphere_, unsigned int position_bins_=30,unsigned int radius_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, bool do_refine_=false, bool soft_voting_=false);
-		~SphereFittingHough() {};
-		FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_);
+	PlaneFittingRansac(double distance_threshold_=0.02,double cluster_tolerance_=0.02, int min_cluster_size_=100, int max_cluster_size_=25000, bool do_refine_=false, double table_z_filter_min_=0.1, double table_z_filter_max=0.5,double z_filter_min_=-10.0, double z_filter_max_=10.0, double plane_detection_voxel_size_=0.03, double clustering_voxel_size_=0.03, int inlier_threshold_=300);
+	FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_);
+	pcl::PointIndices::Ptr getConvexHull();
 };
 
-#endif // SPHEREFITTINGHOUGH_H
+
+#endif // PLANEFITTINGRANSAC_H
+

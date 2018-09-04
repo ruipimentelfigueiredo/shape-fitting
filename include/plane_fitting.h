@@ -11,65 +11,52 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-#ifndef CylinderFitting_H
-#define CylinderFitting_H
+#ifndef PLANEFITTING_H
+#define PLANEFITTING_H
 #include <random>
 #include <pcl/common/transforms.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/filters/project_inliers.h>
-#include <pcl/registration/icp.h>
-#include <pcl/features/principal_curvatures.h>
-#include <Eigen/Geometry>
 
-#include "gaussian_sphere.h"
-#include "spherical_grid.h"
+#include <pcl/registration/icp.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
+
+
 #include "fitting_data.h"
 
-class CylinderFitting
+class PlaneFitting
 {
 	protected:
 	// params
-	float min_radius;
-	float max_radius;
+	double distance_threshold;
+	double cluster_tolerance;
+	double min_cluster_size;
+	double max_cluster_size;
 
 	// refine estimation
 	bool do_refine;
 
-	// Normal estimation
-	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals;
-	pcl::NormalEstimation<PointT, pcl::Normal> ne;
-	pcl::search::KdTree<PointT>::Ptr tree; 
-
+	//aux structures
 	PointCloudT::Ptr cloud_filtered;
-	PointCloudT::Ptr transformed_cloud;
-	pcl::PointIndices::Ptr inliers_cylinder;
-
+	PointCloudT::Ptr table_cloud;
+	pcl::ModelCoefficients::Ptr coefficients;
 	pcl::PassThrough<PointT> pass;
-
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder);
+	pcl::PointIndices::Ptr plane_indices;
+	pcl::PointIndices::Ptr convex_hull_indices;
+	pcl::search::KdTree<PointT>::Ptr tree;
 
 	public:
-		CylinderFitting(float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false) : 
-			min_radius(min_radius_), 
-			max_radius(max_radius_), 
-			do_refine(do_refine_),
-			cloud_normals(new pcl::PointCloud<pcl::Normal>),
-			tree(new pcl::search::KdTree<PointT> ()),	
-			cloud_filtered(new pcl::PointCloud<PointT>),
-			transformed_cloud(new pcl::PointCloud<PointT> ()),
-			inliers_cylinder(new pcl::PointIndices)
-		{};
+		PlaneFitting(double distance_threshold_=0.02,double cluster_tolerance_=0.02, int min_cluster_size_=0.02,int max_cluster_size_=0.5, bool do_refine_=false);
+
+	void ExtractTableTopClusters(PointCloudT::ConstPtr input_cloud, std::vector<pcl::PointIndices> & clusters_indices);
 
 	Eigen::Matrix4f refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_);
 	virtual FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
+	pcl::PointIndices::Ptr getConvexHull();
+	PointCloudT::Ptr getTableCloud();
+	void getClustersFromPointCloud (const PointCloudT &cloud_objects, const std::vector<pcl::PointIndices> &clusters2, std::vector<PointCloudT> &clusters);
 };
 
-#endif // CylinderFitting_H
 
+#endif // PLANEFITTING_H
