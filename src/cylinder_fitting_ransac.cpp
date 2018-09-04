@@ -1,26 +1,20 @@
 /*
- *  Copyright (C) 2018 Rui Pimentel de Figueiredo
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
 
-#include "cylinder_segmentation_ransac.h"
-CylinderSegmentationRansac::CylinderSegmentationRansac(float normal_distance_weight_, unsigned int max_iterations_, float distance_threshold_, float min_radius_,float max_radius_, bool do_refine_) :
-	CylinderSegmentation(min_radius_,max_radius_,do_refine_),
+#include "cylinder_fitting_ransac.h"
+CylinderFittingRansac::CylinderFittingRansac(float normal_distance_weight_, unsigned int max_iterations_, float distance_threshold_, float min_radius_,float max_radius_, bool do_refine_) :
+	CylinderFitting(min_radius_,max_radius_,do_refine_),
 	normal_distance_weight(normal_distance_weight_),
 	max_iterations(max_iterations_),
 	distance_threshold(distance_threshold_)
@@ -40,7 +34,7 @@ CylinderSegmentationRansac::CylinderSegmentationRansac(float normal_distance_wei
 	seg.setRadiusLimits (min_radius, max_radius);
 };
 
-CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr & point_cloud_in_)
+FittingData CylinderFittingRansac::fit(const PointCloudT::ConstPtr & point_cloud_in_)
 {
 	// Compute normals
 	ne.setInputCloud (point_cloud_in_);
@@ -103,9 +97,6 @@ CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 
 	Eigen::VectorXf coeffs(7,1);
 	coeffs << 
-		//cylinder_position[0]+0.5*height*cylinder_direction[0],
-		//cylinder_position[1]+0.5*height*cylinder_direction[1],
-		//cylinder_position[2]+0.5*height*cylinder_direction[2],
 		cylinder_position[0],
 		cylinder_position[1],
 		cylinder_position[2],
@@ -114,9 +105,6 @@ CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 		cylinder_direction[2],
 		coefficients_cylinder->values[6];
 		//height;
-
-
-
 
 	// Create the filtering object
 	PointCloudT::Ptr cloud_projected(new PointCloudT);
@@ -132,45 +120,12 @@ CylinderFitting CylinderSegmentationRansac::segment(const PointCloudT::ConstPtr 
 	// Refine height
 
 	pcl::getMinMax3D(*cloud_projected,min_pt,max_pt);
-	//height=max_pt[2]-min_pt[2];
-
-	// Redefine cylinder position (base);
-	//Eigen::Vector4f refined_cylinder_position=R2.transpose()*Eigen::Vector4f(best_u,best_v,min_pt[2],0.0);
-    	//coefficients_cylinder->values[0]=refined_cylinder_position[0];
-    	//coefficients_cylinder->values[1]=refined_cylinder_position[1];
-    	//coefficients_cylinder->values[2]=refined_cylinder_position[2];
-
-	//std::cout << "height:" << height << std::endl;
-	// VISUALIZE
-
-    	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
-
-   
-	while (!viewer->wasStopped ())
-	{
-		viewer->spinOnce (100);
-		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-	}//*/
-
-	//Eigen::VectorXf coeffs(8,1);
-
-
-
-	/*viewer =simpleVis(point_cloud_in_,cloud_normals,coefficients_cylinder);
-
-
-	while (!viewer->wasStopped ())
-	{
-		viewer->spinOnce (100);
-		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-	}//*/
-
 
 	Eigen::VectorXf final_coeffs(8,1);
 	final_coeffs << coeffs,
 			height;
 
-	CylinderFitting cylinder_fitting(final_coeffs,inlier_ratio_);
+	FittingData cylinder_fitting(final_coeffs,inlier_ratio_,FittingData::CYLINDER,cloud_projected);
 
 	return cylinder_fitting;
 }

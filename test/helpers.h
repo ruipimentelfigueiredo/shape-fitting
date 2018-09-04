@@ -1,25 +1,21 @@
 /*
- *  Copyright (C) 2018 Rui Pimentel de Figueiredo
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-
+#ifndef HELPERS_DATA_H
+#define HELPERS_DATA_H
 #include <boost/filesystem.hpp>
 #include <ctime>
+#include <random>
 bool createDirectory(std::string & path)
 {
     boost::filesystem::path dir(path);
@@ -173,14 +169,13 @@ class PointClouds
 	public:
 		PointClouds(const std::string & dataset_path_)
 		{
-			std::vector<std::string> file_names;
 			boost::filesystem::path p(dataset_path_);
 			boost::filesystem::directory_iterator start(p);
 			boost::filesystem::directory_iterator end;
 			std::transform(start, end, std::back_inserter(file_names), path_leaf_string());
 			std::sort(file_names.begin(), file_names.end());
 
-			for(size_t f=0;f<file_names.size();++f)
+			/*for(size_t f=0;f<file_names.size();++f)
 			{
 				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -189,13 +184,28 @@ class PointClouds
 					exit(-1);
 				}
 				point_clouds.push_back(cloud);
-				//std::cout << dataset_path_+file_names[f] << std::endl;
-			}			
+				std::cout << "loading point cloud " << f << " of " << file_names.size() << " with name " << dataset_path_+file_names[f] << std::endl;
+			}	*/		
 		};
 
+		pcl::PointCloud<pcl::PointXYZ>::Ptr loadPointCloud(const std::string & file_path)
+		{
+			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+
+			if (pcl::io::loadPCDFile<pcl::PointXYZ> (file_path, *cloud) == -1) //* load the file
+			{
+				std::cout << "Couldn't load point cloud" << std::endl;
+				exit(-1);
+			}
+			//point_clouds.push_back(cloud);
+			return cloud;
+			//std::cout << "loading point cloud " << f << " of " << file_names.size() << " with name " << dataset_path_+file_names[f] << std::endl;
+		}
+
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > point_clouds;
+		std::vector<std::string> file_names;
 };
 
-
+#endif // HELPERS_DATA_H
 
 

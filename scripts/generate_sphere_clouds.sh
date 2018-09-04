@@ -1,16 +1,13 @@
 #!/bin/bash
-CYLINDER_GENERATION_EXEC="/home/rui/shape-fitting/build/cylinder_generation"
+SPHERE_GENERATION_EXEC="/home/rui/ws/src/shape_detection_fitting/lib/shape-fitting/build/sphere_generation"
 
 # Directory where dataset is stored
-DATASET_DIR="/home/rui/shape-fitting/dataset/"
+DATASET_DIR="/home/rui/ws/src/shape_detection_fitting/lib/shape-fitting/dataset/sphere/"
 
 # Number of iterations per noise and parameter
 ITERATIONS=500
 
-# Define considered cylinder heights
-HEIGHTS="1.0,2.0,3.0,4.0,5.0"
-#HEIGHTS="3.0"
-# Define considered cylinder radii 
+# Define considered sphere radii 
 RADII="0.5"
 
 # Define noise (std_dev) levels
@@ -21,7 +18,7 @@ NOISE_STD_DEVS="0.0,0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50"
 
 
 # Define outlier levels
-OUTLIERS="0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0"
+OUTLIERS="0"
 
 #OUTLIERS="0"
 
@@ -29,13 +26,11 @@ OUTLIERS="0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0"
 #OCCLUSION_LEVELS="0.0,0.2,0.4,0.6,0.8"
 OCCLUSION_LEVELS="0.0"
 
-# Define height sampling density
-HEIGHT_SAMPLES=30
 
 # Define angle sampling density
 ANGLE_SAMPLES=30
 
 
 #mkdir $DATASET_DIR
-$CYLINDER_GENERATION_EXEC $DATASET_DIR $ITERATIONS $HEIGHTS $RADII $NOISE_STD_DEVS  $OUTLIERS $OCCLUSION_LEVELS $HEIGHT_SAMPLES $ANGLE_SAMPLES
+$SPHERE_GENERATION_EXEC $DATASET_DIR $ITERATIONS $RADII $NOISE_STD_DEVS $OUTLIERS $OCCLUSION_LEVELS $ANGLE_SAMPLES
 

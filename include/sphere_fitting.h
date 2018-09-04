@@ -1,7 +1,19 @@
-#ifndef CYLINDERSEGMENTATION_H
-#define CYLINDERSEGMENTATION_H
+/*
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+/*!    
+    \author Rui Figueiredo : ruipimentelfigueiredo
+*/
+#ifndef SPHEREFITTING_H
+#define SPHEREFITTING_H
+#include <random>
 #include <pcl/common/transforms.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/io/pcd_io.h>
@@ -12,35 +24,14 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/registration/icp.h>
-
+#include <pcl/features/principal_curvatures.h>
 #include <Eigen/Geometry>
 
+#include "gaussian_sphere.h"
+#include "spherical_grid.h"
+#include "fitting_data.h"
 
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include <pcl/features/principal_curvatures.h>
-// DEFINE THE TYPES USED
-typedef pcl::PointXYZ PointT;
-typedef pcl::Normal NormalT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef pcl::PointCloud<NormalT> NormalCloudT;
-
-class CylinderFitting
-{
-
-	public:
-		CylinderFitting(const Eigen::VectorXf & parameters_, const double & confidence_): parameters(parameters_),confidence(confidence_)
-		{
-
-		}
-
- 	Eigen::VectorXf parameters;
-	double confidence;
-};
-
-class CylinderSegmentation
+class SphereFitting
 {
 	protected:
 	// params
@@ -65,7 +56,7 @@ class CylinderSegmentation
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (PointCloudT::ConstPtr cloud,  pcl::PointCloud<pcl::Normal>::ConstPtr normals, pcl::ModelCoefficients::Ptr coefficients_cylinder);
 	public:
-		CylinderSegmentation(float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false) : 
+		SphereFitting(float min_radius_=0.01,float max_radius_=0.1, bool do_refine_=false) : 
 			min_radius(min_radius_), 
 			max_radius(max_radius_), 
 			do_refine(do_refine_),
@@ -77,8 +68,8 @@ class CylinderSegmentation
 		{};
 
 	Eigen::Matrix4f refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_);
-	virtual CylinderFitting segment(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
+	virtual FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
 };
 
-#endif // CYLINDERSEGMENTATION_H
+#endif // SPHEREFITTING_H
 

@@ -1,23 +1,16 @@
 /*
- *  Copyright (C) 2018 Rui Pimentel de Figueiredo
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+Copyright 2018 Rui Miguel Horta Pimentel de Figueiredo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 /*!    
     \author Rui Figueiredo : ruipimentelfigueiredo
 */
-
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/transforms.h>
@@ -48,53 +41,36 @@ int main (int argc, char** argv)
 	std::string dataset_dir = std::string(argv[1]);
 	std::cout << "dataset_dir: " << dataset_dir << std::endl;
 
-	std::string ground_truth_dir = dataset_dir+"/ground_truth/sphere/";
-	std::string point_clouds_dir = dataset_dir+"/point_clouds/sphere/";
+	std::string ground_truth_dir = dataset_dir+"/ground_truth/";
+	std::string point_clouds_dir = dataset_dir+"/point_clouds/";
 	createDirectory(ground_truth_dir);
 	createDirectory(point_clouds_dir);
 
 	unsigned int iterations=atoi(argv[2]);
 	std::cout << "iterations: " << iterations << std::endl;
 
-	static std::string heights_ = std::string(argv[3]);
-	std::cout << "heights: " << heights_ << std::endl;
-
-	static std::string radii_ = std::string(argv[4]); 
+	static std::string radii_ = std::string(argv[3]); 
 	std::cout << "radii: " << radii_ << std::endl;
 
-	static std::string noise_levels_ = std::string(argv[5]);
+	static std::string noise_levels_ = std::string(argv[4]);
 	std::cout << "noise: " << noise_levels_ << std::endl;
 
-	static std::string outlier_levels_ = std::string(argv[6]);
+	static std::string outlier_levels_ = std::string(argv[5]);
 	std::cout << "outliers: " << outlier_levels_ << std::endl;
 
-
-	static std::string occlusion_levels_ = std::string(argv[7]);
+	static std::string occlusion_levels_ = std::string(argv[6]);
 	std::cout << "occlusion_levels: " << occlusion_levels_ << std::endl;
 
-	static unsigned int height_sampling_density = atoi(argv[8]);
-	std::cout << "height_sampling_density: " << height_sampling_density<< std::endl;
-
-	static unsigned int angle_sampling_density = atoi(argv[9]);
+	static unsigned int angle_sampling_density = atoi(argv[7]);
 	std::cout << "angle_sampling_density: " << angle_sampling_density<< std::endl;
 
-	std::vector<double> heights;
 	std::vector<double> radii;
 	std::vector<double> noise_levels; // percentage of object radius (std_dev)
 	std::vector<double> outlier_levels; // percentage of object size (std_dev)
 	std::vector<double> occlusion_levels; // percentage of object size (std_dev)
 
 	double j;
-	std::stringstream ss_(heights_);
-	while (ss_ >> j)
-	{
-	heights.push_back(j);
-
-	if (ss_.peek() == ',')
-		ss_.ignore();
-	}
-
-	ss_=std::stringstream(radii_);
+	std::stringstream ss_=std::stringstream(radii_);
 	while (ss_ >> j)
 	{
 	radii.push_back(j);
@@ -132,12 +108,8 @@ int main (int argc, char** argv)
 		ss_.ignore();
 	}
 
-	std::vector<pcl::PointCloud<pcl::PointXYZ> > point_clouds;
-	std::vector<Eigen::Matrix4d> transfs;
-
-
-	// First, generate 200 point clouds with different radius, heights at random poses
-		
+	unsigned int total_iterations=iterations*outlier_levels.size()*occlusion_levels.size()*radii.size();
+	// generate point clouds with different radius, heights at random poses
 	for(unsigned int i=0; i<iterations; ++i)
 	{
 		for(unsigned int o=0; o<outlier_levels.size();++o)
@@ -146,26 +118,26 @@ int main (int argc, char** argv)
 			{
 				for(unsigned int r_=0; r_<radii.size();++r_)
 				{
-					double radius=radii[r_];
+					double radius=fabs(radii[r_]);
 					// Generate sphere according to parameters
 					pcl::PointCloud<pcl::PointXYZ> cloud;
 					cloud.header.frame_id="world";
 
 					double angle_step=2.0*M_PI/angle_sampling_density;
 
-					unsigned int angle_sampling_density_final=round((1.0-occlusion_levels[occ])*angle_sampling_density);
-
-					for(unsigned int a=0; a < angle_sampling_density_final; ++a)
+					for(unsigned int theta=0; theta < angle_sampling_density; ++theta)
 					{
-						double x,y,z;
-						x=cos(angle_step*a)*fabs(radius);
-						y=sin(angle_step*a)*fabs(radius);
-						z=(double)10;
-						pcl::PointXYZ point(x,y,z);
-						cloud.push_back(point);
+						for(unsigned int phi=0; phi < angle_sampling_density; ++phi)
+						{
+							double x,y,z;
+							x=radius*sin(angle_step*theta)*cos(angle_step*phi);
+							y=radius*sin(angle_step*theta)*sin(angle_step*phi);
+							z=radius*cos(angle_step*theta);
+							pcl::PointXYZ point(x,y,z);
+							cloud.push_back(point);
+						}
 					}
 					
-					point_clouds.push_back(cloud);
 
 					Eigen::Matrix3d rot;
 					rot=Eigen::AngleAxisd(0.0,Eigen::Vector3d::UnitZ());
@@ -173,60 +145,40 @@ int main (int argc, char** argv)
 					Eigen::Vector3d sphere_pos(0,0,0);
 					Eigen::Matrix4d transf;
 					transf.block(0,0,3,3)=rot;
-					//transf.block(0,4,3,1)=sphere_pos;
-					transfs.push_back(transf);
+
+					//Transform point cloud
+					pcl::transformPointCloud (cloud, cloud,transf);
 
 					unsigned int index=r_+occ*radii.size()+o*radii.size()*occlusion_levels.size()+i*radii.size()*occlusion_levels.size()*outlier_levels.size();
-					std::cout << index << std::endl;
+
+					std::cout << index << " of " << total_iterations << std::endl;
+
 					std::stringstream ss;
-					ss << dataset_dir << ground_truth_dir << "ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
+					ss << ground_truth_dir << "ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
 				
 					std::string ground_truth_file=ss.str();
 					Sphere ground_truth(radius, sphere_pos, ground_truth_file);
-					Sphere test(ground_truth_file);
+					//Sphere test(ground_truth_file);
 
-				}
-			}
-		}
-	}
-
-	for(unsigned int i=0; i<iterations; ++i)
-	{
-		for(unsigned int o=0; o<outlier_levels.size();++o)
-		{
-			for(unsigned int occ=0; occ<occlusion_levels.size();++occ)
-			{
-			    	for(unsigned int h_=0; h_<heights.size();++h_)
-			    	{
-					for(unsigned int r_=0; r_<radii.size();++r_)
+					// Then corrupt with diferent levels of noise
+					for(unsigned int n=0; n<noise_levels.size(); ++n)
 					{
-						// Then corrupt with diferent levels of noise
-						for(unsigned int n=0; n<noise_levels.size(); ++n)
+						pcl::PointCloud<pcl::PointXYZ> noisy_cloud(cloud);
+
+						std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
+						for(unsigned int p=0; p<noisy_cloud.size();++p)
 						{
+						    noisy_cloud.points[p].x+=d(gen);
 
-							unsigned int index=r_+h_*radii.size()+occ*radii.size()*heights.size()+o*radii.size()*heights.size()*occlusion_levels.size()+i*radii.size()*heights.size()*occlusion_levels.size()*outlier_levels.size();
+						    noisy_cloud.points[p].y+=d(gen);
 
-							pcl::PointCloud<pcl::PointXYZ> noisy_cloud;
-							noisy_cloud=point_clouds[index];
-							std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
-							for(unsigned int p=0; p<noisy_cloud.size();++p)
-							{
-							    noisy_cloud.points[p].x+=d(gen);
-
-							    noisy_cloud.points[p].y+=d(gen);
-
-							    noisy_cloud.points[p].z+=d(gen);
-							}
-
-							//Transform point cloud
-							pcl::PointCloud<pcl::PointXYZ> cloud_transf;
-							// transfs[index]
-							Eigen::Matrix4f transf=Eigen::Matrix4f::Identity();
-							pcl::transformPointCloud (noisy_cloud, cloud_transf,transf);
-							std::stringstream ss;
-							ss << dataset_dir << "/point_clouds/cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
-							pcl::io::savePCDFile(ss.str(), cloud_transf); // Binary format
+						    noisy_cloud.points[p].z+=d(gen);
 						}
+
+						std::stringstream ss;
+						ss << point_clouds_dir << "cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
+						pcl::io::savePCDFile(ss.str(), noisy_cloud); // Binary format
+
 					}
 				}
 			}
