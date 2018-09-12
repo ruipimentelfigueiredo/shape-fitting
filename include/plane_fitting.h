@@ -29,6 +29,8 @@ class PlaneFitting
 {
 	protected:
 	// params
+	double table_z_filter_min; 
+	double table_z_filter_max;
 	double distance_threshold;
 	double cluster_tolerance;
 	double min_cluster_size;
@@ -40,22 +42,27 @@ class PlaneFitting
 	//aux structures
 	PointCloudT::Ptr cloud_filtered;
 	PointCloudT::Ptr table_cloud;
+	PointCloudT::Ptr cloud_all_minus_table;
+	PointCloudT::Ptr table_cloud_hull;
 	pcl::ModelCoefficients::Ptr coefficients;
 	pcl::PassThrough<PointT> pass;
 	pcl::PointIndices::Ptr plane_indices;
 	pcl::PointIndices::Ptr convex_hull_indices;
 	pcl::search::KdTree<PointT>::Ptr tree;
 
-	public:
-		PlaneFitting(double distance_threshold_=0.02,double cluster_tolerance_=0.02, int min_cluster_size_=0.02,int max_cluster_size_=0.5, bool do_refine_=false);
 
-	void ExtractTableTopClusters(PointCloudT::ConstPtr input_cloud, std::vector<pcl::PointIndices> & clusters_indices);
+	public:
+		PlaneFitting(double table_z_filter_min_, double table_z_filter_max_,double distance_threshold_=0.02,double cluster_tolerance_=0.02, int min_cluster_size_=0.02,int max_cluster_size_=0.5, bool do_refine_=false);
+
+	void extractTabletopClusters(PointCloudT::ConstPtr input_cloud, std::vector<PointCloudT::Ptr> & clusters_point_clouds);
 
 	Eigen::Matrix4f refine(const PointCloudT::ConstPtr & point_cloud_source_, const PointCloudT::ConstPtr & point_cloud_target_);
 	virtual FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_) = 0;
 	pcl::PointIndices::Ptr getConvexHull();
 	PointCloudT::Ptr getTableCloud();
 	void getClustersFromPointCloud (const PointCloudT &cloud_objects, const std::vector<pcl::PointIndices> &clusters2, std::vector<PointCloudT> &clusters);
+
+
 };
 
 

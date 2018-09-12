@@ -16,12 +16,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <Eigen/Geometry>
 #include <pcl/common/common.h>
 
-
 class GaussianMixtureModel
 {
 	public:
+		GaussianMixtureModel()
+		{};
 		GaussianMixtureModel(const std::vector<double> & weights_, const std::vector<Eigen::Matrix<double, 3 ,1> > & means_, const std::vector<Eigen::Matrix<double, 3 ,1> > & std_devs_) : weights(weights_),means(means_),std_devs(std_devs_)
-		{}
+		{};
 	std::vector<double> weights;
 	std::vector<Eigen::Matrix<double, 3 ,1> > means;
 	std::vector<Eigen::Matrix<double, 3 ,1> > std_devs;

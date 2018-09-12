@@ -205,10 +205,10 @@ int main (int argc, char** argv)
 		std::fstream fs_position;
 		std::fstream fs_time;
 
-		fs_orientation.open (output_dir+"orientation_noise_" + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_radius.open (output_dir+"radius_noise_"           + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_position.open (output_dir+"position_noise_"       + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		fs_time.open (output_dir+"time_noise_"               + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::app);
+		fs_orientation.open (output_dir+"orientation_noise_" + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::trunc);
+		fs_radius.open (output_dir+"radius_noise_"           + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::trunc);
+		fs_position.open (output_dir+"position_noise_"       + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::trunc);
+		fs_time.open (output_dir+"time_noise_"               + std::to_string(d)+".txt", std::fstream::in | std::fstream::out | std::fstream::trunc);
 
 		for(unsigned int i=0;i<point_clouds.file_names.size();++i)
 		{	
