@@ -77,17 +77,21 @@ FittingData SphereFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in
 	double x_offset=min_pt[0] - max_radius;
 	double y_offset=min_pt[1] - max_radius;
 	double z_offset=min_pt[2] - max_radius;
+
+
+	ne.setInputCloud (point_cloud_in_);
+	ne.compute (*cloud_normals);
+	/*for(unsigned int s = 0; s < point_cloud_in_->size(); ++s) {
+		if(cloud_normals->points[s].getNormalVector3fMap ().dot(point_cloud_in_->points[s].getVector3fMap ())<0)
+		{
+			cloud_normals->points[s].getNormalVector3fMap ()=-cloud_normals->points[s].getNormalVector3fMap ();
+		}
+	}*/
+
 	// Vote
 	if(soft_voting)
 	{
-		ne.setInputCloud (point_cloud_in_);
-		ne.compute (*cloud_normals);
-		for(unsigned int s = 0; s < point_cloud_in_->size(); ++s) {
-			if(cloud_normals->points[s].getNormalVector3fMap ().dot(point_cloud_in_->points[s].getVector3fMap ())<0)
-			{
-				cloud_normals->points[s].getNormalVector3fMap ()=-cloud_normals->points[s].getNormalVector3fMap ();
-			}
-		}
+
 		for(unsigned int i=0; i<gaussian_sphere->gaussian_sphere_points_num; ++i)
 		{
 			double theta=atan2(gaussian_sphere_voting[i][1],gaussian_sphere_voting[i][0]);
@@ -101,8 +105,9 @@ FittingData SphereFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in
 			double sin_theta_sin_phi=sin_theta*sin_phi;
 			for(unsigned int s = 0; s < point_cloud_in_->size(); ++s)
 			{
-				/*if(Eigen::Vector3d(point_cloud_in_->points[s].x+cos_theta_sin_phi,point_cloud_in_->points[s].y+sin_theta_sin_phi,point_cloud_in_->points[s].z+cos_phi).normalized().dot(cloud_normals->points[s].getNormalVector3fMap ().cast<double>()) <0) 
-					continue;*/
+				// if sphere center dot normal < 0 => continue
+				if(Eigen::Vector3d(point_cloud_in_->points[s].x+cos_theta_sin_phi,point_cloud_in_->points[s].y+sin_theta_sin_phi,point_cloud_in_->points[s].z+cos_phi).normalized().dot(cloud_normals->points[s].getNormalVector3fMap ().cast<double>()) <0) 
+					continue;
 
 				for(unsigned int r_index=0; r_index<radius_bins; ++r_index)
 				{

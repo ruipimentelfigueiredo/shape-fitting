@@ -2,7 +2,7 @@
 CYLINDER_TEST_EXEC=$PWD"/build/cylinder_fitting_test"
 
 # Directory where dataset is stored
-DATASET_DIR=$PWD"/dataset/cylinder_outliers/"
+DATASET_DIR=$PWD"/dataset/cylinder/"
 
 #MODEL PARAMETERS (HOUGH)
 ANGLE_BINS=30

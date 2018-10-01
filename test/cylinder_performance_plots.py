@@ -28,7 +28,7 @@ from os import path
 import numpy as np
 
 import math
-home=path.expanduser('~/ws/src/shape_detection_fitting/lib/shape-fitting/dataset/cylinder_outliers/results')
+home=path.expanduser('~/ws/src/shape_detection_fitting/lib/shape-fitting/dataset/cylinder/results')
 #home=path.expanduser('~/')
 def to_percent(y, position):
     # Ignore the passed in position. This has the effect of scaling the default
@@ -47,9 +47,9 @@ radii=1
 iterations=1000
 ground_truth_size=heights*radii
 
-outlier_levels_number=9
-noise_levels_number=1
-occlusion_levels_number=1
+outlier_levels_number=1
+noise_levels_number=11
+occlusion_levels_number=10
 
 noise_index=0
 outlier_index=0
@@ -58,10 +58,10 @@ occlusion_index=0
 alpha_=0.1
 fontsize_=20
 
-error_levels=[0,10,20,30,40,50,60,70,80,90,100]
-outlier_levels=[0,25,50,75,100,125,150,175,200]
-occlusion_levels=[0,10,20,30,40,50,60,70,80]
-
+error_levels=[0]
+#error_levels=[0,10,20,30,40,50,60,70,80,90,100]
+#outlier_levels=[0,25,50,75,100,125,150,175,200]
+#occlusion_levels=[0,10,20,30,40,50,60,70,80]
 
 colors=['green','green','blue','blue','red','red','black','black','orange','orange','brown','brown','aqua','aqua','yellow','yellow','purple','purple']
 labels=['Rabbani et al.','Rabbani et al. (soft-voting)','Deterministic Orientations','Deterministic Orientations (soft-voting)','Ours (Unbiased)','Ours (Unbiased and soft-voting)','Ours (Weak Vertical-Bias)','Ours (Weak Vertical-Bias and soft-voting)','Ours (Strong Vertical-Bias)','Ours (Strong Vertical-Bias and soft-voting)']

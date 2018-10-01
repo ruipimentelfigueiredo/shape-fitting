@@ -35,7 +35,7 @@ add_executable(sphere_fitting_test test/sphere_fitting_test.cpp)
 target_link_libraries(sphere_fitting_test ${PCL_LIBRARIES} fitting_library)
 
 add_executable(tabletop_scenario_test test/tabletop_scenario_test.cpp)
-target_link_libraries(tabletop_scenario_test ${PCL_LIBRARIES} fitting_library)
+target_link_libraries(tabletop_scenario_test fitting_library)
 
 
 

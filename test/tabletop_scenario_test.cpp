@@ -13,17 +13,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 
 #include <ctime>
-#include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
+#include <chrono>
 #include "cylinder_fitting_hough.h"
 #include "cylinder_fitting_ransac.h"
-#include "helpers.h"
-#include <chrono>
-using namespace std;
-using namespace std::chrono;
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/filters/voxel_grid.h>
 #include "plane_fitting_ransac.h"
+#include "helpers.h"
 
 int main (int argc, char** argv)
 {
@@ -99,8 +93,8 @@ int main (int argc, char** argv)
 	int inlier_threshold=atoi(argv[21]);
 	std::cout << "inlier_threshold: " << inlier_threshold<< std::endl;
 
-
 	std::vector<boost::shared_ptr<CylinderFitting> > cylinder_segmentators;
+
 	// Gaussian Sphere Uniform
 	std::vector<double> weights;
 	std::vector<Eigen::Matrix<double, 3 ,1> > means;
@@ -125,21 +119,23 @@ int main (int argc, char** argv)
 
 	while(1)
 	{
-		for(unsigned int i=0;i<point_clouds.point_clouds.size();++i)
+		for(unsigned int i=0;i<point_clouds.file_names.size();++i)
 		{
+			pcl::PointCloud<PointT>::Ptr point_cloud(new pcl::PointCloud<PointT>());
+			point_cloud=point_clouds.loadPointCloud(dataset_dir+point_clouds.file_names[i]);
+
 			/* PLANE FITTING */
-			high_resolution_clock::time_point t1 = high_resolution_clock::now();
-			FittingData model_params=plane_fitting_ransac.fit(point_clouds.point_clouds[i]);
-			high_resolution_clock::time_point t2 = high_resolution_clock::now();
+			std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+			FittingData model_params=plane_fitting_ransac.fit(point_cloud);
+			std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 			/* END PLANE FITTING */
 
-			std::cout << model_params << std::endl;
-			auto plane_fitting_duration = duration_cast<milliseconds>( t2 - t1 ).count();
+			auto plane_fitting_duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
 
 			/* VISUALIZE */
-			model_params.visualize(point_clouds.point_clouds[i]);
+			model_params.visualize(point_cloud);
 			/* END VISUALIZE */
-			std::cout << "iteration " << (i+1) << " of " << point_clouds.point_clouds.size() << " table fitting time: " << plane_fitting_duration << " ms"<<  std::endl;
+			std::cout << "iteration " << (i+1) << " of " << point_clouds.file_names.size() << " table fitting time: " << plane_fitting_duration << " ms"<<  std::endl;
 		}
 	}
 
