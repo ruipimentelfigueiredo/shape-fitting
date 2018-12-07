@@ -19,6 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/segmentation/organized_multi_plane_segmentation.h>
+
 class PlaneFittingRansac : public PlaneFitting
 {
    	//pcl::IntegralImageNormalEstimation<PointT, pcl::Normal> ne;
@@ -32,6 +33,7 @@ class PlaneFittingRansac : public PlaneFitting
 	int inlier_threshold;
 
 	pcl::VoxelGrid<PointT> grid_;
+
  	KdTreePtr normals_tree_, clusters_tree_;
 	pcl::NormalEstimation<PointT, pcl::Normal> n3d_;
 	pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg_;
@@ -39,8 +41,10 @@ class PlaneFittingRansac : public PlaneFitting
 	pcl::ConvexHull<PointT> hull_;
 	pcl::ExtractPolygonalPrismData<PointT> prism_;
 	pcl::EuclideanClusterExtraction<PointT> pcl_cluster_;
-	PointCloudT::Ptr table_cloud_hull, cloud_downsampled_ptr;
+
+  PointCloudT::Ptr table_cloud_hull, cloud_downsampled_ptr;
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals_ptr;
+
 	pcl::ModelCoefficients::Ptr table_coefficients_ptr;
 	public:
 	PlaneFittingRansac(double distance_threshold_=0.02,double cluster_tolerance_=0.02, int min_cluster_size_=100, int max_cluster_size_=25000, bool do_refine_=false, double table_z_filter_min_=0.1, double table_z_filter_max=0.5,double z_filter_min_=-10.0, double z_filter_max_=10.0, double plane_detection_voxel_size_=0.03, double clustering_voxel_size_=0.03, int inlier_threshold_=300);

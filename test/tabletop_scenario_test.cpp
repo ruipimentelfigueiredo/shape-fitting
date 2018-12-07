@@ -141,6 +141,7 @@ int main (int argc, char** argv)
 				model_params.visualize(point_cloud);
 			/* END VISUALIZE */
 
+
 			std::cout << "iteration " << (i+1) << " of " << point_clouds.file_names.size() << " table fitting time: " << plane_fitting_duration << " ms"<<  std::endl;
 		}
 	}

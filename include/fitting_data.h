@@ -247,9 +247,11 @@ class FittingData
 	{
 		visualize_fitting_data.viewer->removeAllShapes();
 		visualize_fitting_data.viewer->removeAllPointClouds();
-		pcl::visualization::PointCloudColorHandlerCustom<PointT> rgb1(this->inliers, 255, 255, 0);
+
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> rgb1(this->inliers, 255, 255, 0);
 		visualize_fitting_data.viewer->addPointCloud<PointT> (this->inliers, rgb1, std::to_string(this->id).c_str());
 		pcl::visualization::PointCloudColorHandlerCustom<PointT> rgb2(point_cloud_other, 255, 0, 255);
+
 		visualize_fitting_data.viewer->addPointCloud<PointT> (point_cloud_other,rgb2, "original cloud");
 		visualize_fitting_data.viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5,  std::to_string(this->id).c_str());
 		visualize_fitting_data.viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "original cloud");

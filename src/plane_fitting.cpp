@@ -103,4 +103,3 @@ void PlaneFitting::extractTabletopClusters(PointCloudT::ConstPtr input_cloud, st
 		clusters_point_clouds.push_back(cloud_cluster);
 	}
 }
-

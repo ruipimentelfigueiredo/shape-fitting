@@ -62,6 +62,8 @@ class PlaneFitting
 	pcl::PointIndices::Ptr getConvexHull();
 	PointCloudT::Ptr getTableCloud();
 	void getClustersFromPointCloud (const PointCloudT &cloud_objects, const std::vector<pcl::PointIndices> &clusters2, std::vector<PointCloudT> &clusters);
+
+
 };
 
 
