@@ -35,9 +35,10 @@ int main (int argc, char** argv)
 
 	std::random_device rd{};
 	std::mt19937 gen{rd()};
-	std::normal_distribution<> d1{0,  0.5};
-	std::normal_distribution<> d2{0,  0.5};
-	std::normal_distribution<> d3{1.0,0.5};
+	std::normal_distribution<> d1{0,  0.005};
+	std::normal_distribution<> d2{0,  0.005};
+	std::normal_distribution<> d3{1.0,0.005};
+
 	std::string dataset_dir = std::string(argv[1]);
 	std::cout << "dataset_dir: " << dataset_dir << std::endl;
 
@@ -61,7 +62,6 @@ int main (int argc, char** argv)
 	static std::string outlier_levels_ = std::string(argv[6]);
 	std::cout << "outliers: " << outlier_levels_ << std::endl;
 
-
 	static std::string occlusion_levels_ = std::string(argv[7]);
 	std::cout << "occlusion_levels: " << occlusion_levels_ << std::endl;
 
@@ -73,8 +73,8 @@ int main (int argc, char** argv)
 
 	std::vector<double> heights;
 	std::vector<double> radii;
-	std::vector<double> noise_levels; // percentage of object radius (std_dev)
-	std::vector<double> outlier_levels; // percentage of object size (std_dev)
+	std::vector<double> noise_levels;     // percentage of object radius (std_dev)
+	std::vector<double> outlier_levels;   // percentage of object size (std_dev)
 	std::vector<double> occlusion_levels; // percentage of object size (std_dev)
 
 	double j;
@@ -137,7 +137,6 @@ int main (int argc, char** argv)
 			    	{
 					for(unsigned int r_=0; r_<radii.size();++r_)
 					{
-
 						double height=heights[h_];
 						double radius=radii[r_];
 						// Generate cylinder according to parameters
@@ -147,7 +146,6 @@ int main (int argc, char** argv)
 						double angle_step=2.0*M_PI/angle_sampling_density;
 						double height_step=fabs(height/height_sampling_density);
 						unsigned int angle_sampling_density_final=round((1.0-occlusion_levels[occ])*angle_sampling_density);
-						//std::cout << angle_sampling_density_final << " " << occlusion_levels[occ] << std::endl;
 						for(unsigned int a=0; a < angle_sampling_density_final; ++a)
 						{
 							double x,y,z;
@@ -163,31 +161,24 @@ int main (int argc, char** argv)
 
 
 						// top / down surfaces
-						unsigned int plane_samples=outlier_levels[o]*sqrt(height_sampling_density*angle_sampling_density);
+						//double plane_area=M_PI*radius*radius;
+						unsigned int plane_samples=outlier_levels[o]*sqrt(height_sampling_density*angle_sampling_density)*0.5;
 
-						//double plane_size=2*radius;
 						double plane_min=0.0-radius;
-						//double plane_step=(double)plane_size/plane_samples;
 						double plane_step=height_step;
-						double z=0.0;
 						for(unsigned int x_=0; x_<plane_samples;++x_)
 						{
 							double x=plane_min+x_*plane_step;
 							for(unsigned int y_=0; y_<plane_samples;++y_)
 							{
-
 							    double y=plane_min+y_*plane_step;
-							    //if(sqrt(x*x+y*y)>radius) continue;
-
-							    pcl::PointXYZ point(x,y,z);
 							    cloud.push_back(pcl::PointXYZ(x,y,0));
 							    cloud.push_back(pcl::PointXYZ(x,y,height));
 							}
 						}
 
 						// Generate random orientation
-						//Eigen::Vector3d cyl_dir=Eigen::Vector3d::UnitZ();
-						Eigen::Vector3d cyl_dir(d1(gen),d2(gen),d3(gen));
+						Eigen::Vector3d cyl_dir=Eigen::Vector3d::UnitZ();
 						cyl_dir.normalize();
 
 						Eigen::Vector3d xaxis = Eigen::Vector3d::UnitY().cross(cyl_dir);
@@ -214,22 +205,18 @@ int main (int argc, char** argv)
 						transf.block(0,0,3,3)=rot;
 						transf.block(0,3,3,1)=cyl_pos;
 
-
 						//Transform point cloud
-						pcl::transformPointCloud (cloud, cloud,transf);
+						pcl::transformPointCloud (cloud,cloud,transf);
 
+						unsigned int index=r_+h_*radii.size()+occ*radii.size()*heights.size()+o*radii.size()*heights.size()*occlusion_levels.size()+i*radii.size()*heights.size()*occlusion_levels.size()*outlier_levels.size();
 
-
-						unsigned int index=r_+h_*radii.size()+occ*radii.size()*heights.size()+o*radii.size()*heights.size()*occlusion_levels.size()+i*radii.size()*heights.size()*occlusion_levels.size()*outlier_levels.size()
-;
 						std::cout << index << " of " << total_iterations << std::endl;
 
 						std::stringstream ss;
 						ss << ground_truth_dir << "ground_truth_" << std::setfill('0') << std::setw(6) << index << ".txt";
 					
 						std::string ground_truth_file=ss.str();
-						Cylinder ground_truth(radius,height,cyl_dir,cyl_pos, ground_truth_file);
-						//Cylinder test(ground_truth_file);
+						Cylinder ground_truth(radius,height,cyl_dir,cyl_pos,ground_truth_file);
 
 						// Then corrupt with diferent levels of noise
 						for(unsigned int n=0; n<noise_levels.size(); ++n)
@@ -239,19 +226,15 @@ int main (int argc, char** argv)
 							std::normal_distribution<> d{0,noise_levels[n]*radii[r_]};
 							for(unsigned int p=0; p<noisy_cloud.size();++p)
 							{
-							    noisy_cloud.points[p].x+=d(gen);
-
-							    noisy_cloud.points[p].y+=d(gen);
-
-							    noisy_cloud.points[p].z+=d(gen);
+								noisy_cloud.points[p].x+=d(gen);
+								noisy_cloud.points[p].y+=d(gen);
+								noisy_cloud.points[p].z+=d(gen);
 							}
 
 							std::stringstream ss;
 							ss << point_clouds_dir << "cloud_" << std::setfill('0') << std::setw(6) << std::to_string(index) << "_noise_" << std::setfill('0') << std::setw(6) << n << ".pcd";
 							pcl::io::savePCDFile(ss.str(), noisy_cloud); // Binary format
 						}
-
-
 					}
 				}
 			}

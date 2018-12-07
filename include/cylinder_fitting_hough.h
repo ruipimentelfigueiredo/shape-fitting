@@ -31,7 +31,6 @@ class CylinderFittingHough : public CylinderFitting
 	OrientationAccumulatorSpace gaussian_sphere;
 	std::vector<double> cyl_direction_accum;
 
-
 	// Circle GHT
 	unsigned int angle_bins;
 
@@ -46,6 +45,7 @@ class CylinderFittingHough : public CylinderFitting
 	unsigned int mode;
 	bool soft_voting;
 
+	pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> principal_curvatures_estimation;
 
 	// private methods
 	Eigen::Vector3d findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_);

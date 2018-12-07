@@ -19,7 +19,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 class GaussianSphere : public OrientationAccumulatorSpace
 {
 	public:
-		GaussianSphere(const GaussianMixtureModel & gmm_,const unsigned int & gaussian_sphere_points_num_=900, const unsigned int & orientation_accumulators_num_=10) :
+		GaussianSphere( const GaussianMixtureModel & gmm_,
+				const unsigned int & gaussian_sphere_points_num_=900,
+				const unsigned int & orientation_accumulators_num_=10) :
 			OrientationAccumulatorSpace(gaussian_sphere_points_num_,orientation_accumulators_num_),
 			gmm(gmm_)
 		{
@@ -32,7 +34,7 @@ class GaussianSphere : public OrientationAccumulatorSpace
 			std::cout << "Creating gaussian spheres" << std::endl;
 			for(unsigned int o=0;o<orientation_accumulators_num;++o)
 			{
-				std::cout << "  Creating gaussian sphere number " << o << std::endl;
+				std::cout << "  Creating gaussian sphere number " << o << " comprising " << gaussian_sphere_points_num << " points." << std::endl;
 				std::vector<Eigen::Vector3d> gaussian_sphere_points_;
 				for(unsigned int g=0;g<gmm.weights.size();++g)
 				{

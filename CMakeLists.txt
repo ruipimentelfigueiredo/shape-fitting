@@ -18,7 +18,7 @@ include_directories(include
 
 
 # FITTING LIB
-add_library (fitting_library src/cylinder_fitting.cpp src/cylinder_fitting_hough.cpp src/cylinder_fitting_ransac.cpp  src/sphere_fitting_hough.cpp src/plane_fitting.cpp src/plane_fitting_ransac.cpp src/gaussian_sphere.cpp src/fitting_data.cpp)
+add_library (fitting_library src/cylinder_fitting.cpp src/cylinder_fitting_hough.cpp src/sphere_fitting_hough.cpp src/plane_fitting.cpp src/plane_fitting_ransac.cpp src/gaussian_sphere.cpp src/fitting_data.cpp)
 target_link_libraries (fitting_library ${PCL_LIBRARIES})
 
 # TESTS

@@ -104,7 +104,7 @@ class VisualizeFittingData
 class FittingData
 {
 	public:
-	FittingData() : confidence(1.0), type(FittingData::OTHER) {} 
+	FittingData() : confidence(1.0), type(FittingData::CYLINDER) {} 
 
 	FittingData(const Eigen::VectorXf & parameters_, const double & confidence_, const unsigned int type_, PointCloudT::Ptr inliers_,PointCloudT::Ptr outliers_=PointCloudT::Ptr (new PointCloudT())): 
 		parameters(parameters_),confidence(confidence_), type(type_), inliers(inliers_),outliers(outliers_),id(++id_count)
@@ -247,9 +247,9 @@ class FittingData
 	{
 		visualize_fitting_data.viewer->removeAllShapes();
 		visualize_fitting_data.viewer->removeAllPointClouds();
-		pcl::visualization::PointCloudColorHandlerCustom<PointT> rgb1(this->inliers, 255, 0, 0);
+		pcl::visualization::PointCloudColorHandlerCustom<PointT> rgb1(this->inliers, 255, 255, 0);
 		visualize_fitting_data.viewer->addPointCloud<PointT> (this->inliers, rgb1, std::to_string(this->id).c_str());
-		pcl::visualization::PointCloudColorHandlerCustom<PointT> rgb2(point_cloud_other, 0, 0, 0);
+		pcl::visualization::PointCloudColorHandlerCustom<PointT> rgb2(point_cloud_other, 255, 0, 255);
 		visualize_fitting_data.viewer->addPointCloud<PointT> (point_cloud_other,rgb2, "original cloud");
 		visualize_fitting_data.viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5,  std::to_string(this->id).c_str());
 		visualize_fitting_data.viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "original cloud");

@@ -48,9 +48,16 @@ CylinderFittingHough::CylinderFittingHough(const OrientationAccumulatorSpace & g
 		cos_angle[w]=cos(current_angle);// TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
 		sin_angle[w]=sin(current_angle);// TODO PRECOMPUTE TRIGONOMETRIC FUNCTION
 	}
+
   	//ne.setRadiusSearch (0.03);
-	ne.setKSearch (10);
+	ne.setKSearch (6);
 	ne.setSearchMethod (tree);
+
+	// Use the same KdTree from the normal estimation
+	principal_curvatures_estimation.setSearchMethod (tree);
+
+	//principal_curvatures_estimation.setRadiusSearch (0.03);
+	principal_curvatures_estimation.setKSearch (6);
 };
 
 
@@ -58,15 +65,9 @@ CylinderFittingHough::CylinderFittingHough(const OrientationAccumulatorSpace & g
 
 Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_)
 {
-  	/*boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
-    	viewer = normalsVis(point_cloud_in_, cloud_normals);
-	while (!viewer->wasStopped ())
-	{
-		viewer->spinOnce (100);
-		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-	}*/
+	double curvature_epsilon=0.000001;
+
 	// Setup the principal curvatures computation
-	pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> principal_curvatures_estimation;
 
 	// Provide the original point cloud (without normals)
 	principal_curvatures_estimation.setInputCloud ( point_cloud_in_);
@@ -74,30 +75,48 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 	// Provide the point cloud with normals
 	principal_curvatures_estimation.setInputNormals (cloud_normals);
 
-	// Use the same KdTree from the normal estimation
-	principal_curvatures_estimation.setSearchMethod (tree);
-	//principal_curvatures_estimation.setRadiusSearch (0.03);
-	principal_curvatures_estimation.setKSearch (10);
-
-	// Actually compute the principal curvatures
+	// Compute the principal curvatures
 	pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr principal_curvatures (new pcl::PointCloud<pcl::PrincipalCurvatures> ());
 	principal_curvatures_estimation.compute (*principal_curvatures);
 
-
 	//3. for each point normal
-
 	std::fill(cyl_direction_accum.begin(),cyl_direction_accum.end(), 0);
 
 	const std::vector<Eigen::Vector3d> & gaussian_sphere_voting=gaussian_sphere.getOrientationAccumulatorSpace();
 
-        if(soft_voting)
+	/*double step=10.0*M_PI/180.0;
+	unsigned int steps=floor(M_PI/step);
+	unsigned int
+	for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 	{
 
+		Eigen::Matrix3d identity=Eigen::Matrix3d::Identity();
+		Eigen::Vector3d b=(Eigen::Vector3d::UnitZ()-cloud_normals->points[s].getNormalVector3fMap().cast<double>());
+		Eigen::Matrix3d rotation_matrix=identity-2*b*b.transpose();
+		Eigen::Vector3d normal=cloud_normals->points[s].getNormalVector3fMap().cast<double>();
+		for(unsigned int t_step = 0; t_step < steps; ++t_step)
+		{
+			double t=step*t_step;
+			double x=cos(t);
+			double y=sin(t);
+			double z=0;
+			Eigen::Vector3d rotated_vector=(rotation_matrix*cloud_normals->points[s].getNormalVector3fMap().cast<double>().normalized()).normalized();
+			//std::cout << rotated_vector.norm() << " " << cloud_normals->points[s].getNormalVector3fMap().cast<double>().norm() << std::endl;
+			double phi=atan2(y,x);
+			double theta=acos(z);
+
+			unsigned int phi_bin=(phi/M_PI))*sqrt(gaussian_sphere_voting.size());
+			unsigned int theta_bin=(theta/(M_PI))*gaussian_sphere_voting.size()*0.5;
+			std::cout << "phi bin:" << phi_bin << " " << "theta bin:" << theta_bin << std::endl;
+		}
+	}*/
+
+        if(soft_voting)
+	{
 		for(unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 		{
-
 			Eigen::Vector3d voting_direction=gaussian_sphere_voting[i];
-			for(unsigned int s = 0; s < cloud_normals->size(); ++s)
+			for(unsigned int s=0; s<cloud_normals->size(); ++s)
 			{
 				double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
 				if(mode==NORMAL)
@@ -105,71 +124,39 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 					//1 - fabs(dot.product)
 					cyl_direction_accum[i]+=normal_weight;
 				}
-				else if(mode==CURVATURE)
-				{
-					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
-					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
-
-					cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1;//*10.0;
-				}
 				else if(mode==HYBRID)
 				{
 					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
-					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
+					double sum_curvatures=principal_curvatures->points[s].pc1+principal_curvatures->points[s].pc2;
+					
+					if(sum_curvatures>curvature_epsilon)
+						cyl_direction_accum[i]+=normal_weight*curvature_weight*( (principal_curvatures->points[s].pc1-principal_curvatures->points[s].pc2) / sum_curvatures );
+					else
+						cyl_direction_accum[i]+=normal_weight;
 
-					cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
+					//cyl_direction_accum[i]+=normal_weight*curvature_weight*principal_curvatures->points[s].pc1;
 				}
 			}
-
 		}
 	}
 	else
 	{
+		// Simplified implementation of Rabanni et al.
+		double voting_thresh=M_PI/sqrt(gaussian_sphere_voting.size());
 		for(unsigned int s = 0; s < cloud_normals->size(); ++s)
 		{
-			int best_direction_index_=0;
-			double best_direction_score=0;
 			for(unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 			{
 				Eigen::Vector3d voting_direction=gaussian_sphere_voting[i];
-				
-				double normal_weight=(1.0-fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
-				double best_direction_score_temp=0;
-				if(mode==NORMAL)
+				double normal_weight=(fabs(cloud_normals->points[s].getNormalVector3fMap().cast<double>().dot(voting_direction)));
+				if(acos(1.0-normal_weight)<voting_thresh)
 				{
-					//1 - fabs(dot.product)
-					best_direction_score_temp=normal_weight;
-				}
-				else if(mode==CURVATURE)
-				{
-					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
-					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
-
-					best_direction_score_temp=curvature_weight*principal_curvatures->points[s].pc1;
-					//cyl_direction_accum[i]+=curvature_weight*principal_curvatures->points[s].pc1;//*10.0;
-				}
-				else if(mode==HYBRID)
-				{
-					double curvature_weight=(1.0-fabs(Eigen::Vector3d(principal_curvatures->points[s].principal_curvature[0],principal_curvatures->points[s].principal_curvature[1],principal_curvatures->points[s].principal_curvature[2]).dot(voting_direction)));
-					//Eigen::Vector3d curvature_dir=cloud_normals->points[s].getNormalVector3fMap().cast<double>().cross(voting_direction);
-
-					//cyl_direction_accum[i]+=normal_weight*curvature_weight;//*principal_curvatures->points[s].pc1;//*principal_curvatures->points[s].pc1;
-					best_direction_score_temp=normal_weight*curvature_weight*principal_curvatures->points[s].pc1;
-				}
-
-				if(best_direction_score_temp>best_direction_score)
-				{
-					best_direction_index_=i;
-					best_direction_score=best_direction_score_temp;
+					cyl_direction_accum[i]+=1;	
 				}
 			}
-
-			cyl_direction_accum[best_direction_index_]+=1;
 		}
 	}
 
-
-	std::vector<Eigen::Vector3d> best_orientations;
 	// Get best orientation
 	double most_votes=0.0;
 	unsigned int best_direction_index=0;
@@ -182,10 +169,15 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 		}
 	}
 
+	/*
+	// TODO: HERE WE CAN CLUSTER
+	std::vector<Eigen::Vector3d> best_orientations;
 	best_orientations.push_back(gaussian_sphere_voting[best_direction_index]);
 
 	// Choose orientation whose votes are a percentage above a given threshold of the best orientation
-	cyl_direction_accum[best_direction_index]=0; 	// This is more efficient than having an if condition to verify if we are considering the best pose again
+	cyl_direction_accum[best_direction_index]=0; 	
+
+	// This is more efficient than having an if condition to verify if we are considering the best pose again
 	for (unsigned int i=0; i<gaussian_sphere_voting.size(); ++i)
 	{
 		if(cyl_direction_accum[i]>=accumulator_peak_threshold*most_votes)
@@ -194,8 +186,8 @@ Eigen::Vector3d CylinderFittingHough::findCylinderDirection(const NormalCloudT::
 		}
 	}
 
+	*/
 
-	// HERE WE SHOULD CLUSTER
 
 	return gaussian_sphere_voting[best_direction_index];
 }
@@ -211,9 +203,11 @@ Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const
 	double u_position_step_inv=(double)1.0/u_position_step;
 	double v_position_step_inv=(double)1.0/v_position_step;
 
-	// Reset Accumulator;
-	for (unsigned int u_index=0; u_index < position_bins; ++u_index) {
-		for (unsigned int v_index=0; v_index < position_bins; ++v_index) {
+	// Reset accumulator
+	for (unsigned int u_index=0; u_index < position_bins; ++u_index) 
+	{
+		for (unsigned int v_index=0; v_index < position_bins; ++v_index)
+		{
 			std::fill(cyl_circ_accum[u_index][v_index].begin(),cyl_circ_accum[u_index][v_index].end(), 0);
 		}
 	}
@@ -233,7 +227,7 @@ Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const
 				unsigned int u_hough=floor( (current_radius*cos_angle[w]+u)*u_position_step_inv); 
 				unsigned int v_hough=floor( (current_radius*sin_angle[w]+v)*v_position_step_inv); 
 
-				//if(u_hough<0||v_hough<0||u_hough>=position_bins||v_hough>=position_bins)
+
 				if(u_hough>=position_bins)
 					continue;//u_hough=position_bins-1;
 				if(v_hough>=position_bins)
@@ -247,9 +241,12 @@ Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const
 	// Get best
 	unsigned int best_u_bin=0, best_v_bin=0, best_r_bin=0;
 	double most_votes=0.0;
-	for (unsigned int u_index=0; u_index < position_bins; ++u_index) {
-		for (unsigned int v_index=0; v_index < position_bins; ++v_index) {
-			for (unsigned int r_index=0; r_index < radius_bins; ++r_index) {
+	for (unsigned int u_index=0; u_index < position_bins; ++u_index) 
+	{
+		for (unsigned int v_index=0; v_index < position_bins; ++v_index) 
+		{
+			for (unsigned int r_index=0; r_index < radius_bins; ++r_index)
+			{
 				if(cyl_circ_accum[u_index][v_index][r_index]>most_votes) 
 				{
 					best_u_bin=u_index;
@@ -270,7 +267,6 @@ Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const
 	Eigen::Matrix<double,5,1> result;
 	result << best_u, best_v, min_pt[2], best_r, ((double)max_pt[2]-(double)min_pt[2]);
 	return result;
-
 }
 
 FittingData CylinderFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_in_)
@@ -304,11 +300,6 @@ FittingData CylinderFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_
 		aux=Eigen::AngleAxisd(acos(cylinder_direction.dot(up)),rot_axis);
 		R2.block(0,0,3,3)=aux;
 	}
-
-	//R2.block(0,3,3,1)=min_pt.block(0,0,3,1);
-    	//std::cout << R2 << std::endl;
-	//std::cout << "result rot:" << std::endl << R2.block(0,0,3,3)*cylinder_direction << std::endl;
-  	// HERE FILTER POINTS THAT HAVE NORMAL NOT PERPENDICULAR TO CILINDER DIRECTION (CHECK CROSS PRODUCT)
 
 	// Extract the cylinder inliers from the input cloud
 	double thresh_=fabs(cos(angle_step));
