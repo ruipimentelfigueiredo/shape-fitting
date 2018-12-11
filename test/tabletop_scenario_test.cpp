@@ -93,6 +93,10 @@ int main (int argc, char** argv)
 	int inlier_threshold=atoi(argv[21]);
 	std::cout << "inlier_threshold: " << inlier_threshold<< std::endl;
 
+	bool visualize=atoi(argv[22]);
+	std::cout << "visualize: " << visualize << std::endl;
+
+
 	std::vector<boost::shared_ptr<CylinderFitting> > cylinder_segmentators;
 
 	// Gaussian Sphere Uniform
@@ -133,8 +137,11 @@ int main (int argc, char** argv)
 			auto plane_fitting_duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
 
 			/* VISUALIZE */
-			model_params.visualize(point_cloud);
+			if(visualize)
+				model_params.visualize(point_cloud);
 			/* END VISUALIZE */
+
+
 			std::cout << "iteration " << (i+1) << " of " << point_clouds.file_names.size() << " table fitting time: " << plane_fitting_duration << " ms"<<  std::endl;
 		}
 	}

@@ -42,11 +42,12 @@ class PlaneFitting
 	//aux structures
 	PointCloudT::Ptr cloud_filtered;
 	PointCloudT::Ptr table_cloud;
-	PointCloudT::Ptr cloud_all_minus_table;
+	PointCloudT::Ptr table_outliers_cloud;
+
+	pcl::PointIndices::Ptr table_inliers_ptr;
+
 	PointCloudT::Ptr table_cloud_hull;
 	pcl::ModelCoefficients::Ptr coefficients;
-	pcl::PassThrough<PointT> pass;
-	pcl::PointIndices::Ptr plane_indices;
 	pcl::PointIndices::Ptr convex_hull_indices;
 	pcl::search::KdTree<PointT>::Ptr tree;
 

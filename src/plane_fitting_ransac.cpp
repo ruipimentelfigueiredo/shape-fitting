@@ -1,118 +1,105 @@
-#include "plane_fitting_ransac.h"
+#include "plane_fitting.h"
 
-PlaneFittingRansac::PlaneFittingRansac(double distance_threshold_,double cluster_tolerance_, int min_cluster_size_,int max_cluster_size_, bool do_refine_, double  table_z_filter_min_, double table_z_filter_max_,double z_filter_min_, double z_filter_max_, double plane_detection_voxel_size_, double clustering_voxel_size_, int inlier_threshold_) :
-	PlaneFitting(table_z_filter_min_,table_z_filter_max_,distance_threshold_, cluster_tolerance_, min_cluster_size_, max_cluster_size_, do_refine_),
-	z_filter_min(z_filter_min_),
-	z_filter_max(z_filter_max_),
-	plane_detection_voxel_size(plane_detection_voxel_size_),
-	clustering_voxel_size(clustering_voxel_size_),
-	inlier_threshold(inlier_threshold_),
-	cloud_filtered_ptr(new PointCloudT()),
-	cloud_downsampled_ptr(new PointCloudT()),
-	cloud_normals_ptr(new pcl::PointCloud<pcl::Normal>()),
+PlaneFitting::PlaneFitting(double table_z_filter_min_, double table_z_filter_max_,double distance_threshold_,double cluster_tolerance_, int min_cluster_size_,int max_cluster_size_, bool do_refine_) : 
+	table_z_filter_min(table_z_filter_min_),
+	table_z_filter_max(table_z_filter_max_),
+	distance_threshold(distance_threshold_),
+	cluster_tolerance(cluster_tolerance_),
+	min_cluster_size(min_cluster_size_),
+	max_cluster_size(max_cluster_size_),
+	do_refine(do_refine_),
+	cloud_filtered(new pcl::PointCloud<PointT>),
+	table_cloud(new pcl::PointCloud<PointT> ()),
+	table_outliers_cloud(new pcl::PointCloud<PointT> ()),
 	table_inliers_ptr(new pcl::PointIndices()),
-	table_coefficients_ptr(new pcl::ModelCoefficients)
+	table_cloud_hull(new PointCloudT()),
+	coefficients (new pcl::ModelCoefficients),
+	convex_hull_indices (new pcl::PointIndices),
+	tree(new pcl::search::KdTree<PointT>)
+{}
+
+pcl::PointIndices::Ptr PlaneFitting::getConvexHull()
 {
-  	// Filtering parameters
-	grid_.setLeafSize (plane_detection_voxel_size, plane_detection_voxel_size, plane_detection_voxel_size);
-	grid_.setFilterFieldName ("z");
-	grid_.setFilterLimits (z_filter_min, z_filter_max);
-	grid_.setDownsampleAllData (false);
-
-
-	grid_objects_.setLeafSize (clustering_voxel_size, clustering_voxel_size, clustering_voxel_size);
-	grid_objects_.setDownsampleAllData (false);
-
-
-	pass_.setFilterFieldName ("z");
-	pass_.setFilterLimits (z_filter_min, z_filter_max);
-
-	normals_tree_ = boost::make_shared<KdTree> ();
-	clusters_tree_ = boost::make_shared<KdTree> ();
-
-	// Normal estimation parameters
-	n3d_.setKSearch (10);  
-	n3d_.setSearchMethod (normals_tree_);
-
-	// Table model fitting parameters
-	seg_.setDistanceThreshold (0.05); 
-	seg_.setMaxIterations (10000);
-	seg_.setNormalDistanceWeight (0.1);
-	seg_.setOptimizeCoefficients (do_refine_);
-	seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-	seg_.setMethodType (pcl::SAC_RANSAC);
-	seg_.setProbability (0.99);
-
+	return this->convex_hull_indices;
 }
 
-FittingData PlaneFittingRansac::fit(const PointCloudT::ConstPtr & point_cloud_in_)
+PointCloudT::Ptr PlaneFitting::getTableCloud()
 {
-
-	// Step 1 : Filter, remove NaNs and downsample
-	pass_.setInputCloud (point_cloud_in_);
-	pass_.filter (*cloud_filtered_ptr);
-
-	grid_.setInputCloud (cloud_filtered_ptr);
-	grid_.filter (*cloud_downsampled_ptr);
-
-	if (cloud_filtered_ptr->points.size() < (unsigned int)min_cluster_size)
-	{
-		PCL_ERROR ("Downsampled cloud only has points %d", (int)cloud_filtered_ptr->points.size());
-		PCL_THROW_EXCEPTION (FittingException, "Downsampled cloud only has only " << (int)cloud_downsampled_ptr->points.size());
-	}
-
-	// Step 2 : Estimate normals
-	n3d_.setInputCloud (cloud_downsampled_ptr);
-	n3d_.compute (*cloud_normals_ptr);
-
-
-	// Step 3 : Perform planar segmentation
-	seg_.setInputCloud (cloud_downsampled_ptr);
-	seg_.setInputNormals (cloud_normals_ptr);
-	seg_.segment (*table_inliers_ptr, *table_coefficients_ptr);
-
-	//pcl::SACSegmentation<PointT> seg;
-	//seg.setOptimizeCoefficients (do_refine);
-	//seg.setModelType (pcl::SACMODEL_PLANE);
-	//seg.setMethodType (pcl::SAC_RANSAC);
-	//seg.setDistanceThreshold (distance_threshold);
-	//seg.setInputCloud (cloud_filtered_ptr);
-	//seg.segment (table_inliers, *table_coefficients);*/
-
-
-	if (table_inliers_ptr->indices.size () == 0)
-	{
-		PCL_ERROR ("Could not estimate a planar model for the given dataset.");
-		PCL_THROW_EXCEPTION (FittingException, "points belonging to flat surface not found ");
-	}
-	if ( table_inliers_ptr->indices.size() < (unsigned int)inlier_threshold)
-	{
-		PCL_ERROR("Plane detection has %d inliers, below min threshold of %d", (int)table_inliers_ptr->indices.size(), inlier_threshold);
-		PCL_THROW_EXCEPTION (FittingException, "Failed to detect point cloud.");
-	}
-	if (table_coefficients_ptr->values.size () <=3)
-	{
-		PCL_ERROR ("Failed to detect point cloud.");
-		PCL_THROW_EXCEPTION (FittingException, "Failed to detect point cloud.");
-	}
-
-
-	proj_.setInputCloud (cloud_downsampled_ptr);
-	proj_.setIndices (table_inliers_ptr);
-	proj_.setModelCoefficients (table_coefficients_ptr);
-	proj_.filter (*table_cloud);
-
-	pcl::ExtractIndices<PointT> extract;
-	extract.setInputCloud (cloud_downsampled_ptr);
-	extract.setIndices (table_inliers_ptr);
-	extract.setNegative (true);
-	extract.filter (*cloud_all_minus_table);
-
-	Eigen::Vector4f coefficients_eigen(table_coefficients_ptr->values.data());
-	double confidence=1.0;
-	return FittingData(coefficients_eigen,confidence,FittingData::PLANE,table_cloud,cloud_all_minus_table);
+	return this->table_cloud;
 }
 
 
+void PlaneFitting::getClustersFromPointCloud (const PointCloudT &cloud_objects, 			    
+			    const std::vector<pcl::PointIndices> &clusters2, 
+			    std::vector<PointCloudT> &clusters)
+{
+	clusters.resize (clusters2.size ());
+	for (size_t i = 0; i < clusters2.size (); ++i)
+	{
+		pcl::PointCloud<PointT> cloud_cluster;
+		pcl::copyPointCloud(cloud_objects, clusters2[i], clusters[i]);    
+	}
+}
 
+void PlaneFitting::extractTabletopClusters(PointCloudT::ConstPtr input_cloud, std::vector<PointCloudT::Ptr> & clusters_point_clouds)
+{
+	// Create a Convex Hull representation of the projected inliers
+	pcl::ConvexHull<PointT> chull;
+	chull.setInputCloud (table_cloud);
+	chull.reconstruct (*table_cloud_hull);
 
+	// segment those points that are in the polygonal prism
+	pcl::ExtractPolygonalPrismData<pcl::PointXYZ> ex;
+	ex.setInputCloud (table_cloud);
+	ex.setInputPlanarHull (table_cloud_hull);
+	ex.segment (*convex_hull_indices);
+
+	// ---[ Get the objects on top of the table
+	pcl::PointIndices cloud_object_indices;
+	//prism_.setInputCloud (cloud_all_minus_table_ptr);
+	ex.setInputCloud (input_cloud);
+	ex.setInputPlanarHull (table_cloud_hull);
+	ex.setHeightLimits (table_z_filter_min, table_z_filter_max);  
+	ex.segment (cloud_object_indices);
+
+	PointCloudT cloud_objects;
+	pcl::ExtractIndices<PointT> extract_object_indices;
+	extract_object_indices.setInputCloud (input_cloud);
+	extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
+	extract_object_indices.filter (cloud_objects);
+  	PointCloudT::ConstPtr cloud_objects_ptr = boost::make_shared<const PointCloudT > (cloud_objects);
+
+	if (cloud_objects_ptr->points.empty ()) 
+	{
+		PCL_ERROR ("No objects on plane.");
+		return;
+		PCL_THROW_EXCEPTION (FittingException, "No objects on plane.");
+	}
+
+	std::vector<pcl::PointIndices> clusters_indices;
+  	tree->setInputCloud (cloud_objects_ptr);
+
+	// Create EuclideanClusterExtraction and set parameters
+	pcl::EuclideanClusterExtraction<PointT> ec;
+  	ec.setSearchMethod (tree);
+	ec.setClusterTolerance (cluster_tolerance);
+	ec.setMinClusterSize (min_cluster_size);
+	ec.setMaxClusterSize (max_cluster_size);
+	// set input cloud and let it run
+	ec.setInputCloud (cloud_objects_ptr);
+	ec.extract (clusters_indices);
+
+	for (std::vector<pcl::PointIndices>::const_iterator it = clusters_indices.begin (); it != clusters_indices.end (); ++it)
+	{
+		// Extract the inliers
+		PointCloudT::Ptr cloud_cluster (new PointCloudT);
+
+		for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
+			cloud_cluster->points.push_back (cloud_objects_ptr->points[*pit]); //*
+		cloud_cluster->width = cloud_cluster->points.size ();
+		cloud_cluster->height = 1;
+		cloud_cluster->is_dense = true;
+
+		clusters_point_clouds.push_back(cloud_cluster);
+	}
+}
