@@ -13,9 +13,58 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 #ifndef HELPERS_DATA_H
 #define HELPERS_DATA_H
+#include <pcl/io/ply_io.h>
+#include <pcl/io/pcd_io.h>
 #include <boost/filesystem.hpp>
 #include <ctime>
 #include <random>
+#include "yaml-cpp/yaml.h"
+
+
+unsigned int sub_directory_count(const std::string& name)
+{
+    boost::filesystem::path full_path(name);
+
+    unsigned long file_count = 0;
+    unsigned long dir_count = 0;
+    unsigned long err_count = 0;
+
+    if ( !boost::filesystem::exists( full_path ) )
+    {
+        std::cout << "\nNot found: " << full_path.filename() << std::endl;
+        return 0;
+    }
+
+    if ( boost::filesystem::is_directory( full_path ) )
+    {
+        boost::filesystem::directory_iterator end_iter;
+        for ( boost::filesystem::directory_iterator dir_itr( full_path ); dir_itr != end_iter; ++dir_itr)
+        {
+            try
+            {
+                if ( boost::filesystem::is_directory( *dir_itr ) )
+                {
+                    ++dir_count;
+                }
+                else
+                {
+                    ++file_count;
+                }
+            }
+            catch ( const std::exception & ex )
+            {
+                ++err_count;
+            }
+        }
+        //std::cout << "\n" << file_count << " files\n" << dir_count << " directories\n" << err_count << " errors\n";
+    }
+    else // must be a file
+    {
+        std::cout << full_path.string() << "\n";    
+    }
+    return dir_count;
+}
+
 bool createDirectory(std::string & path)
 {
     boost::filesystem::path dir(path);
@@ -44,12 +93,13 @@ struct path_leaf_string
     }
 };
  
-void readDirectory(const std::string& name, std::vector<std::string>& v)
+void readDirectory(const std::string& name, std::vector<std::string>& file_names)
 {
-    boost::filesystem::path p(name);
-    boost::filesystem::directory_iterator start(p);
-    boost::filesystem::directory_iterator end;
-    std::transform(start, end, std::back_inserter(v), path_leaf_string());
+	boost::filesystem::path p(name);
+	boost::filesystem::directory_iterator start(p);
+	boost::filesystem::directory_iterator end;
+	std::transform(start, end, std::back_inserter(file_names), path_leaf_string());
+	std::sort(file_names.begin(), file_names.end());
 }
 
 class Cylinder
@@ -157,7 +207,6 @@ class GroundTruth
 			for(size_t f=0;f<file_names.size();++f)
 			{
 				ground_truth.push_back(dataset_path_+file_names[f]);
-				//std::cout << dataset_path_+file_names[f] << std::endl;
 			}		
 		};
 
@@ -172,21 +221,44 @@ class PointClouds
 			boost::filesystem::path p(dataset_path_);
 			boost::filesystem::directory_iterator start(p);
 			boost::filesystem::directory_iterator end;
-			std::transform(start, end, std::back_inserter(file_names), path_leaf_string());
-			std::sort(file_names.begin(), file_names.end());
+			//std::transform(start, end, std::back_inserter(file_names), path_leaf_string());
+			//std::sort(file_names.begin(), file_names.end());
 
-			/*for(size_t f=0;f<file_names.size();++f)
+			//boost::filesystem::path p(dataset_path_);
+			//boost::filesystem::directory_iterator start(p);
+			//boost::filesystem::directory_iterator end;
+			file_names.clear();
+			std::transform(start, end, std::back_inserter(aux_file_names), path_leaf_string());
+			std::sort(aux_file_names.begin(), aux_file_names.end());
+
+			std::string delimiter = ".";
+			std::string token ;
+			for(size_t f=0;f<aux_file_names.size();++f)
 			{
-				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-
-				if (pcl::io::loadPCDFile<pcl::PointXYZ> (dataset_path_+file_names[f], *cloud) == -1) //* load the file
+				try
 				{
-					exit(-1);
+					token = aux_file_names[f].substr(aux_file_names[f].find(delimiter),aux_file_names[f].length());
 				}
-				point_clouds.push_back(cloud);
-				std::cout << "loading point cloud " << f << " of " << file_names.size() << " with name " << dataset_path_+file_names[f] << std::endl;
-			}	*/		
+				catch ( const std::exception & ex )
+				{
+					continue;
+				}
+				if(!token.empty())
+					file_names.push_back(aux_file_names[f]);
+			}	
 		};
+
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr loadPointCloudRGB(const std::string & file_path)
+		{
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+			if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (file_path, *cloud) == -1) //* load the file
+			{
+				std::cout << "Couldn't load point cloud" << std::endl;
+				exit(-1);
+			}
+			return cloud;
+		}
 
 		pcl::PointCloud<pcl::PointXYZ>::Ptr loadPointCloud(const std::string & file_path)
 		{
@@ -197,14 +269,14 @@ class PointClouds
 				std::cout << "Couldn't load point cloud" << std::endl;
 				exit(-1);
 			}
-			//point_clouds.push_back(cloud);
 			return cloud;
-			//std::cout << "loading point cloud " << f << " of " << file_names.size() << " with name " << dataset_path_+file_names[f] << std::endl;
 		}
 
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > point_clouds;
 		std::vector<std::string> file_names;
+		std::vector<std::string> aux_file_names;
 };
+
 
 #endif // HELPERS_DATA_H
 

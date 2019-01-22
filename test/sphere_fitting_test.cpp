@@ -64,15 +64,19 @@ int main (int argc, char** argv)
 	float normal_distance_weight=atof(argv[9]);
 	std::cout << "normal_distance_weight: " << normal_distance_weight<< std::endl;
 
-	unsigned int max_iterations=atoi(argv[10]);
-	std::cout << "max_iterations: " << max_iterations << std::endl;
-
-	float distance_threshold=atof(argv[11]);
+	float distance_threshold=atof(argv[10]);
 	std::cout << "distance_threshold: " << distance_threshold << std::endl;
 
-	bool do_refine=atoi(argv[12]);
+	bool do_refine=atoi(argv[11]);
 	std::cout << "do_refine: " << do_refine << std::endl;
 
+	bool visualize=atoi(argv[12]);
+	std::cout << "visualize: " << visualize << std::endl;
+
+	boost::shared_ptr<VisualizeFittingData> visualizer;
+	
+	if(visualize)
+		visualizer=boost::shared_ptr<VisualizeFittingData>(new VisualizeFittingData());
 
 	// Gaussian Sphere Uniform
 	std::vector<double> weights;
@@ -168,7 +172,7 @@ int main (int argc, char** argv)
 			/* END STORE RESULTS */
 
 			/* VISUALIZE */
-			model_params.visualize(point_cloud);
+			model_params.visualize(point_cloud,visualizer);
 			/* END VISUALIZE */
 
 			std::cout << "iteration " << i << " of " << point_clouds.point_clouds.size() << " total time: " << duration << " ms"<<  std::endl;

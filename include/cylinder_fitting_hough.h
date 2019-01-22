@@ -18,19 +18,20 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 class CylinderFittingHough : public CylinderFitting
 {
+	const double curvature_epsilon=0.000001;
 	private:
+
 	std::vector<double> cos_angle;
 	std::vector<double> sin_angle;
-        public:
+	public:
+
 	static const unsigned int NORMAL=0;
-	static const unsigned int CURVATURE=1;
-	static const unsigned int HYBRID=2;
+	static const unsigned int HYBRID=1;
 	// private attributes
 
 	// Direction HT
 	OrientationAccumulatorSpace gaussian_sphere;
 	std::vector<double> cyl_direction_accum;
-
 
 	// Circle GHT
 	unsigned int angle_bins;
@@ -45,16 +46,18 @@ class CylinderFittingHough : public CylinderFitting
 
 	unsigned int mode;
 	bool soft_voting;
+	double orientation_peak_threshold;
 
+	pcl::PrincipalCurvaturesEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalCurvatures> principal_curvatures_estimation;
 
 	// private methods
-	Eigen::Vector3d findCylinderDirection(const NormalCloudT::ConstPtr & cloud_normals, const PointCloudT::ConstPtr & point_cloud_in_);
-	Eigen::Matrix<double,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_);
+	std::tuple<Eigen::Vector3d, double> findCylinderDirection(const pcl::PointCloud<pcl::Normal>::ConstPtr & normal_cloud, const PointCloudT::ConstPtr & point_cloud_in_);
+	Eigen::Matrix<double,5,1> findCylinderPositionRadius(const PointCloudT::ConstPtr & point_cloud_in_, const pcl::PointCloud<pcl::Normal>::ConstPtr & normal_cloud);
 
 	public:
-		CylinderFittingHough(const OrientationAccumulatorSpace & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false, bool soft_voting_=true);
+		CylinderFittingHough(const OrientationAccumulatorSpace & gaussian_sphere_, unsigned int angle_bins_=30,unsigned int radius_bins_=10,unsigned int position_bins_=10,double min_radius_=0.01,double max_radius_=0.1, double accumulator_peak_threshold_=0.2, unsigned int mode_=0, bool do_refine_=false, bool soft_voting_=true, double orientation_peak_threshold_=0.003);
 
-		FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_);
+		FittingData fit(const PointCloudT::ConstPtr & point_cloud_in_,const pcl::PointCloud<pcl::Normal>::ConstPtr & cloud_normal_in_);
 
 
 };

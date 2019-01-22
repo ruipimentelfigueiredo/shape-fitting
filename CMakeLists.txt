@@ -16,9 +16,8 @@ include_directories(include
   ${PCL_INCLUDE_DIRS}
 )
 
-
 # FITTING LIB
-add_library (fitting_library src/cylinder_fitting.cpp src/cylinder_fitting_hough.cpp src/cylinder_fitting_ransac.cpp  src/sphere_fitting_hough.cpp src/plane_fitting.cpp src/plane_fitting_ransac.cpp src/gaussian_sphere.cpp src/fitting_data.cpp)
+add_library (fitting_library src/cylinder_fitting.cpp src/cylinder_fitting_hough.cpp src/sphere_fitting_hough.cpp src/plane_fitting.cpp src/plane_fitting_ransac.cpp src/gaussian_sphere.cpp src/fitting_data.cpp)
 target_link_libraries (fitting_library ${PCL_LIBRARIES})
 
 # TESTS
@@ -34,9 +33,5 @@ target_link_libraries(cylinder_fitting_test ${PCL_LIBRARIES} fitting_library)
 add_executable(sphere_fitting_test test/sphere_fitting_test.cpp)
 target_link_libraries(sphere_fitting_test ${PCL_LIBRARIES} fitting_library)
 
-add_executable(tabletop_scenario_test test/tabletop_scenario_test.cpp)
-target_link_libraries(tabletop_scenario_test ${PCL_LIBRARIES} fitting_library)
-
-
-
-
+add_executable(cylinder_real_data_test test/cylinder_real_data_test.cpp)
+target_link_libraries(cylinder_real_data_test ${PCL_LIBRARIES} fitting_library)
