@@ -233,16 +233,17 @@ Eigen::Matrix<double,5,1> CylinderFittingHough::findCylinderPositionRadius(const
  	// Vote
 	 
 	// TODO: take advantage of known normal
-	double angle_thresh = 0.0; //Between 0 and 1 
+	//double angle_thresh = 0.0; //Between 0 and 1 
 	for(unsigned int p=0; p < point_cloud_in_->points.size(); ++p)
 	{
 		for(unsigned int w=0; w<angle_bins;++w)
 		{
 			// Account for normal orientation (should point outwards the center)
-			double dot_product=Eigen::Vector2d(normal_cloud->at(p).normal_x,normal_cloud->at(p).normal_y).dot(Eigen::Vector2d(cos_angle[w],sin_angle[w]));
+			/*double dot_product=Eigen::Vector2d(normal_cloud->at(p).normal_x,normal_cloud->at(p).normal_y).dot(Eigen::Vector2d(cos_angle[w],sin_angle[w]));
 
-			//if(dot_product>-angle_thresh)
-			//	continue;
+			if(dot_product>-angle_thresh)
+				continue;
+			*/
 			for(unsigned int r=0; r<radius_bins;++r)
 			{	
 				double current_radius=r_step*r+min_radius;
@@ -385,6 +386,11 @@ FittingData CylinderFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_
 
 	std::vector<int> inliers; 
 	dit->selectWithinDistance (coeffs, 0.01, inliers); 
+
+	/*Eigen::VectorXf model_coefficients;
+	std::vector< double > distances;
+	dit->getDistancesToModel(coeffs, distances);*/
+
 	pcl::copyPointCloud<PointT>(*point_cloud_in_, inliers, *cloud_projected); 
 
 	double inlier_ratio_=((double)cloud_projected->size()/(double)point_cloud_in_->size());
@@ -399,7 +405,7 @@ FittingData CylinderFittingHough::fit(const PointCloudT::ConstPtr & point_cloud_
 	//Eigen::Vector4d refined_cylinder_position=R2.transpose()*Eigen::Vector4d(best_u,best_v,min_pt[2],0.0);
 	//coefficients_cylinder->values[0]=refined_cylinder_position[0];
 	//coefficients_cylinder->values[1]=refined_cylinder_position[1];
-	//coefficients_cylinder->values[2]=refined_cylinder_position[2];
+	//coefficients_cylinder->values[2]=refined_cylinder_position[2];*/
 
 	Eigen::VectorXf final_coeffs(8,1);
 	final_coeffs << coeffs,

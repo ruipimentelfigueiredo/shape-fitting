@@ -8,10 +8,15 @@
 
 2. Generate dataset (dataset/ground_truth dataset/point_clouds): ```bash scripts/generate_clouds.sh``` (change the folder paths and desired parameters inside fitting_tests.sh file)
 
-## Generating test results 
+## Generating test results (simulation)
 1. Go inside ```$SHAPE_FITTING_DIR``` folder
 
-2. Generate test results (dataset/results): ```bash scripts/fitting_tests.sh``` (change the folder paths and desired parameters inside fitting_tests.sh file)
+2. Generate test results (dataset/results): ```bash scripts/fitting_tests.sh``` (change the folder paths and desired parameters inside ```fitting_tests.sh file```)
+
+## Evaluate quality of fitting on real clouds
+1. Go inside ```$SHAPE_FITTING_DIR``` folder
+
+Evaluate: ```bash scripts/real_data_tests.sh``` (change the folder paths and desired parameters inside fitting_tests.sh file)
 
 
 ### Reference

@@ -202,6 +202,17 @@ int main (int argc, char** argv)
 				ne.compute (*cloud_normals);
 			}
 
+			for(unsigned int i=0; i<cloud_normals->size();++i)
+			{
+				double dot_product=cloud_normals->points[i].getNormalVector3fMap ().dot(Eigen::Vector3f(point_cloud->points[i].x,point_cloud->points[i].y,point_cloud->points[i].z));
+				if(dot_product<0.0)
+				{
+					cloud_normals->at(i).normal_x=-cloud_normals->at(i).normal_x;
+					cloud_normals->at(i).normal_y=-cloud_normals->at(i).normal_y;
+					cloud_normals->at(i).normal_z=-cloud_normals->at(i).normal_z;
+				}
+			}
+
 			high_resolution_clock::time_point t1 = high_resolution_clock::now();
 			FittingData model_params=cylinder_segmentators[d]->fit(point_cloud, cloud_normals);
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -219,7 +230,7 @@ int main (int argc, char** argv)
 			float position_error=(model_params.parameters.head(2)-Eigen::Vector2f(ground_truth.position[0], ground_truth.position[1])).norm();
 			fs_position << position_error << " " << "\n";
 
-    			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
+			auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
 			fs_time << duration << " " << "\n";
 			/* END STORE RESULTS */
 
