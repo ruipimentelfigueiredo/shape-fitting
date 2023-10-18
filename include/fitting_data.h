@@ -311,7 +311,7 @@ class FittingData
 		hull_calculator.setAlpha(alpha);
 		hull_calculator.reconstruct(*hull, polygons);
 
-		dim = hull_calculator.getDim();
+		dim = hull_calculator.getDimension();
 		return hull;
 	}
 
