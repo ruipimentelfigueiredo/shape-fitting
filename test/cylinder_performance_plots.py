@@ -35,38 +35,29 @@ for test_type in test_types:
 	current_file = os.path.abspath(os.path.dirname(__file__)+"/..")
 	home = os.path.join(current_file, 'dataset')
 
-	def to_percent(y, position):
-	    # Ignore the passed in position. This has the effect of scaling the default tick locations.
-	    s = str(100 * y)
-
-	    # The percent symbol needs escaping in latex
-	    if plt.rcParams['text.usetex'] is True:
-		return s #+ r'$\%$'
-	    else:
-		return s #+ '%'
 
 	total_algorithms=4
 	algorithms=[0,1,2,3]
 	heights=5
 	radii=1
-	iterations=1000
+	iterations=100
 	ground_truth_size=heights*radii
 
 	if test_type=='robustness_noise':
-	    dataset_path=path.expanduser(home+'/cylinder_noise/results')
-	    error_levels=[0.01,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.00]
-	    outlier_levels=[0]
-	    occlusion_levels=[0]
+		dataset_path=path.expanduser(home+'/cylinder_noise/results')
+		error_levels=[0.01,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.00]
+		outlier_levels=[0]
+		occlusion_levels=[0]
 	elif test_type=='robustness_outliers':
-	    dataset_path=path.expanduser(home+'/cylinder_outliers/results')
-	    error_levels=[0]
-	    outlier_levels=[0.00,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5]
-	    occlusion_levels=[0]
+		dataset_path=path.expanduser(home+'/cylinder_outliers/results')
+		error_levels=[0]
+		outlier_levels=[0.00,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5]
+		occlusion_levels=[0]
 	elif test_type=='robustness_occlusion':
-	    dataset_path=path.expanduser(home+'/cylinder_occlusion/results')
-	    error_levels=[0]
-	    outlier_levels=[0]
-	    occlusion_levels=[0.00,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90]
+		dataset_path=path.expanduser(home+'/cylinder_occlusion/results')
+		error_levels=[0]
+		outlier_levels=[0]
+		occlusion_levels=[0.00,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90]
 	    
 
 	occlusion_x_ticks=(0.00,0.20,0.40,0.60,0.80)
@@ -137,7 +128,7 @@ for test_type in test_types:
 			plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('noise standard deviation [% of cylinder radius]',fontsize=fontsize_)
 		plt.ylabel('absolute orientation error [$^\circ$]',fontsize=fontsize_)
 		plt.xticks(error_levels_x_ticks,color='k',size=fontsize_)
@@ -159,7 +150,7 @@ for test_type in test_types:
 			plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('noise standard deviation [% of cylinder radius]',fontsize=fontsize_)
 		plt.ylabel('absolute position error [m]',fontsize=fontsize_)
 		plt.xticks(error_levels_x_ticks, color='k', size=fontsize_)
@@ -179,7 +170,7 @@ for test_type in test_types:
 			plt.fill_between(error_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('noise standard deviation [% of cylinder radius]',fontsize=fontsize_)
 		plt.ylabel('absolute radius error [m]',fontsize=fontsize_)
 		plt.xticks(error_levels_x_ticks,color='k',size=fontsize_)
@@ -202,7 +193,7 @@ for test_type in test_types:
 			plt.fill_between(outlier_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('outliers [% of original surface points]',fontsize=fontsize_)
 		plt.ylabel('absolute orientation error [$^\circ$]',fontsize=fontsize_)
 		plt.xticks(outliers_x_ticks,color='k',size=fontsize_)
@@ -224,7 +215,7 @@ for test_type in test_types:
 			plt.fill_between(outlier_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('outliers [% of original surface points]',fontsize=fontsize_)
 		plt.ylabel('absolute position error [m]',fontsize=fontsize_)
 		plt.xticks(outliers_x_ticks,color='k',size=fontsize_)
@@ -244,7 +235,7 @@ for test_type in test_types:
 			plt.fill_between(outlier_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('outliers [% of original surface points]',fontsize=fontsize_)
 		plt.ylabel('absolute radius error [m]',fontsize=fontsize_)
 		plt.xticks(outliers_x_ticks, color='k', size=fontsize_)
@@ -266,7 +257,7 @@ for test_type in test_types:
 			plt.fill_between(occlusion_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('occlusion [% of original surface points]',fontsize=fontsize_)
 		plt.ylabel('absolute orientation error [$^\circ$]',fontsize=fontsize_)
 		plt.xticks(error_levels_x_ticks, color='k',size=fontsize_)
@@ -288,7 +279,7 @@ for test_type in test_types:
 			plt.fill_between(occlusion_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('occlusion [% of original surface points]',fontsize=fontsize_)
 		plt.ylabel('absolute position error [m]',fontsize=fontsize_)
 		plt.xticks(occlusion_x_ticks, color='k', size=fontsize_)
@@ -308,7 +299,7 @@ for test_type in test_types:
 			plt.fill_between(occlusion_levels,error_sup,error_inf,where=error_inf<=error_sup,interpolate=True,alpha=alpha_,color=colors[a],linestyle=linestyles[a])
 
 		manager = plt.get_current_fig_manager()
-		manager.resize(*manager.window.maxsize())
+		# manager.resize(*manager.window.maxsize())
 		plt.xlabel('occlusion [% of original cylinder surface points]',fontsize=fontsize_)
 		plt.ylabel('absolute radius error [m]',fontsize=fontsize_)
 		plt.xticks(occlusion_x_ticks, color='k', size=fontsize_)
