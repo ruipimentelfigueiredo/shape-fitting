@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(shape-fitting)
+set(CMAKE_CXX_STANDARD 14)
 
 find_package(PCL REQUIRED)
 find_package(Boost COMPONENTS system filesystem regex REQUIRED)

@@ -55,18 +55,32 @@ void PlaneFitting::extractTabletopClusters(PointCloudT::ConstPtr input_cloud, pc
 		//Segment Objects
 		if (regions.size () > 0)
 		{
-			std::vector<bool> plane_labels;
+			// The function: void setExcludeLabels (const std::vector<bool>& exclude_labels)
+			// has been deprecated in PCL 1.10! 
+			// Change to new function.
+			
+			// std::vector<bool> plane_labels;
+			// for (size_t i = 0; i < label_indices.size (); ++i)
+			// {
+			// 	if (label_indices[i].indices.size () >= (unsigned int) inlier_threshold) // its a plane
+			// 	{
+			// 		plane_labels.push_back (true);
+			// 	}
+			// 	else
+			// 	{
+			// 		plane_labels.push_back (false);
+			// 	}
+			// }
+
+		    pcl::EuclideanClusterComparator<PointT, pcl::Label>::ExcludeLabelSetPtr plane_labels(new pcl::EuclideanClusterComparator<PointT, pcl::Label>::ExcludeLabelSet);
 			for (size_t i = 0; i < label_indices.size (); ++i)
 			{
 				if (label_indices[i].indices.size () >= (unsigned int) inlier_threshold) // its a plane
 				{
-					plane_labels.push_back (true);
-				}
-				else
-				{
-					plane_labels.push_back (false);
+					plane_labels->insert(i);
 				}
 			}
+
 			euclidean_cluster_comparator_->setInputCloud (input_cloud);
 			euclidean_cluster_comparator_->setInputNormals (input_normals);
 			euclidean_cluster_comparator_->setLabels (labels);
